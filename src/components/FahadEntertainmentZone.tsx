@@ -1,0 +1,1563 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Globe, 
+  Heart, 
+  ThumbsUp, 
+  MessageSquare, 
+  Share2, 
+  Sparkles, 
+  UserCheck, 
+  Plus, 
+  Image as ImageIcon, 
+  Send, 
+  Flame, 
+  CheckCircle,
+  User,
+  Edit3,
+  X,
+  Zap,
+  Lock,
+  Mail,
+  Phone,
+  Key,
+  Calendar,
+  LogOut,
+  Trash2,
+  Camera,
+  ShieldCheck,
+  RefreshCw,
+  ExternalLink,
+  ChevronRight,
+  Maximize2,
+  Users,
+  Grid,
+  Search,
+  Check,
+  CornerDownRight,
+  AlertTriangle,
+  Copy
+} from 'lucide-react';
+import { gameSound } from '../utils/gameSound';
+
+export interface NexusUser {
+  id: string;
+  name: string;
+  identifier: string; // Email or Phone number
+  password: string;
+  avatar: string;
+  bio: string;
+  joinedAt: string;
+  dob?: string;
+  gender?: string;
+}
+
+export interface NexusCommentReply {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  text: string;
+  timeAgo: string;
+}
+
+export interface NexusComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  text: string;
+  timeAgo: string;
+  likes: number;
+  likedBy: string[]; // user IDs who liked this comment
+  replies: NexusCommentReply[];
+}
+
+export interface NexusPost {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  content: string;
+  imageUrl?: string;
+  timeAgo: string;
+  reactions: {
+    like: number;
+    love: number;
+    care: number;
+    haha: number;
+    wow: number;
+    sad: number;
+    fire: number;
+  };
+  userReactions: Record<string, 'like' | 'love' | 'care' | 'haha' | 'wow' | 'sad' | 'fire'>;
+  comments: NexusComment[];
+}
+
+export const FahadEntertainmentZone: React.FC = () => {
+  // Current Logged-In User
+  const [currentUser, setCurrentUser] = useState<NexusUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('nexus_current_user_v4');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Registered Users Database
+  const [usersDb, setUsersDb] = useState<NexusUser[]>(() => {
+    try {
+      const saved = localStorage.getItem('nexus_users_db_v4');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Permanent Posts Database
+  const [posts, setPosts] = useState<NexusPost[]>(() => {
+    try {
+      const saved = localStorage.getItem('nexus_posts_db_v4');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // App Dedicated Workspace View
+  const [isAppOpen, setIsAppOpen] = useState<boolean>(false);
+  const [appActiveTab, setAppActiveTab] = useState<'timeline' | 'myposts' | 'users'>('timeline');
+
+  // Modals
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [authTab, setAuthTab] = useState<'login' | 'signup' | 'reset'>('login');
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  
+  // Public User Profile View Modal
+  const [viewingPublicUser, setViewingPublicUser] = useState<NexusUser | null>(null);
+
+  // Post Delete Confirmation Modal State
+  const [deleteConfirmPostId, setDeleteConfirmPostId] = useState<string | null>(null);
+
+  // Form Fields - Email or Phone
+  const [formName, setFormName] = useState('');
+  const [formIdentifier, setFormIdentifier] = useState('');
+  const [formPassword, setFormPassword] = useState('');
+  const [formDob, setFormDob] = useState('');
+  const [formGender, setFormGender] = useState('male');
+  const [formBio, setFormBio] = useState('');
+  const [formAvatar, setFormAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
+
+  // Reset Password Flow
+  const [resetCode, setResetCode] = useState('');
+  const [resetStep, setResetStep] = useState<'identifier' | 'code' | 'newpass'>('identifier');
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+
+  // Post Creation
+  const [postContent, setPostContent] = useState('');
+  const [postImageBase64, setPostImageBase64] = useState<string | null>(null);
+
+  // Active Reaction Picker
+  const [activeReactionPickerId, setActiveReactionPickerId] = useState<string | null>(null);
+
+  // Comments & Replies State
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [activeReplyInputId, setActiveReplyInputId] = useState<string | null>(null); // commentId
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({}); // commentId -> reply text
+
+  // Toast Banner
+  const [toastText, setToastText] = useState<string | null>(null);
+
+  // Status Alerts
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // File Inputs
+  const postImageFileRef = useRef<HTMLInputElement | null>(null);
+  const avatarFileRef = useRef<HTMLInputElement | null>(null);
+
+  // Sync to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('nexus_users_db_v4', JSON.stringify(usersDb));
+  }, [usersDb]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('nexus_current_user_v4', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('nexus_current_user_v4');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('nexus_posts_db_v4', JSON.stringify(posts));
+  }, [posts]);
+
+  const showToast = (msg: string) => {
+    setToastText(msg);
+    setTimeout(() => setToastText(null), 3000);
+  };
+
+  // Signup
+  const handleSignup = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatusMsg(null);
+
+    const inputVal = formIdentifier.trim();
+    if (!inputVal) {
+      setStatusMsg({ type: 'error', text: 'অনুগ্রহ করে একটি ইমেইল আইডি বা ফোন নম্বর প্রদান করুন।' });
+      gameSound.playBounce();
+      return;
+    }
+
+    if (formPassword.length < 6) {
+      setStatusMsg({ type: 'error', text: 'পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।' });
+      gameSound.playBounce();
+      return;
+    }
+
+    const existing = usersDb.find(u => u.identifier.toLowerCase() === inputVal.toLowerCase());
+    if (existing) {
+      setStatusMsg({ type: 'error', text: 'এই ইমেইল বা ফোন নম্বর দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে! লগইন করুন।' });
+      gameSound.playBounce();
+      return;
+    }
+
+    const newUser: NexusUser = {
+      id: `usr_${Date.now()}`,
+      name: formName.trim(),
+      identifier: inputVal.toLowerCase(),
+      password: formPassword,
+      avatar: formAvatar,
+      bio: formBio.trim() || 'NEXUS সোশ্যাল মিডিয়ার সক্রিয় সদস্য!',
+      joinedAt: new Date().toLocaleDateString('bn-BD'),
+      dob: formDob,
+      gender: formGender
+    };
+
+    setUsersDb([...usersDb, newUser]);
+    setCurrentUser(newUser);
+    setShowAuthModal(false);
+    showToast('🎉 NEXUS অ্যাকাউন্ট সফলভাবে রেজিস্ট্রেশন হয়েছে!');
+    gameSound.playScore();
+  };
+
+  // Login
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatusMsg(null);
+
+    const user = usersDb.find(
+      u => u.identifier.toLowerCase() === formIdentifier.trim().toLowerCase() && u.password === formPassword
+    );
+
+    if (!user) {
+      setStatusMsg({ type: 'error', text: 'ইমেইল/ফোন নম্বর বা পাসওয়ার্ড সঠিক নয়! আবার চেষ্টা করুন।' });
+      gameSound.playBounce();
+      return;
+    }
+
+    setCurrentUser(user);
+    setShowAuthModal(false);
+    setStatusMsg(null);
+    showToast(`স্বাগতম, ${user.name}!`);
+    gameSound.playScore();
+  };
+
+  // Password Reset Flow
+  const handleResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (resetStep === 'identifier') {
+      const user = usersDb.find(u => u.identifier.toLowerCase() === formIdentifier.trim().toLowerCase());
+      if (!user) {
+        setStatusMsg({ type: 'error', text: 'এই ইমেইল বা ফোন নম্বর পাওয়া যায়নি।' });
+        gameSound.playBounce();
+        return;
+      }
+      setResetStep('code');
+      setStatusMsg({ type: 'success', text: 'ভেরিফিকেশন কোড পাঠানো হয়েছে (কোড: 2026)।' });
+      gameSound.playBounce();
+    } else if (resetStep === 'code') {
+      if (resetCode !== '2026') {
+        setStatusMsg({ type: 'error', text: 'ভুল কোড! আবার চেষ্টা করুন (সঠিক কোড: 2026)।' });
+        gameSound.playBounce();
+        return;
+      }
+      setResetStep('newpass');
+      setStatusMsg(null);
+    } else if (resetStep === 'newpass') {
+      if (newPasswordInput.length < 6) {
+        setStatusMsg({ type: 'error', text: 'পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।' });
+        gameSound.playBounce();
+        return;
+      }
+
+      setUsersDb(usersDb.map(u => {
+        if (u.identifier.toLowerCase() === formIdentifier.trim().toLowerCase()) {
+          return { ...u, password: newPasswordInput };
+        }
+        return u;
+      }));
+
+      setStatusMsg({ type: 'success', text: 'পাসওয়ার্ড পরিবর্তন সফল হয়েছে! এখন লগইন করুন।' });
+      setAuthTab('login');
+      setResetStep('identifier');
+      setFormPassword(newPasswordInput);
+      gameSound.playScore();
+    }
+  };
+
+  // Logout
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setShowProfileModal(false);
+    showToast('লগ-আউট সম্পন্ন হয়েছে।');
+    gameSound.playBounce();
+  };
+
+  // Local Gallery Uploads
+  const handlePostImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (evt.target?.result) {
+        setPostImageBase64(evt.target.result as string);
+        gameSound.playBounce();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (evt.target?.result) {
+        const url = evt.target.result as string;
+        setFormAvatar(url);
+        if (currentUser) {
+          const updated = { ...currentUser, avatar: url };
+          setCurrentUser(updated);
+          setUsersDb(usersDb.map(u => u.id === currentUser.id ? updated : u));
+        }
+        gameSound.playBounce();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Create Post
+  const handleCreatePost = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) {
+      setShowAuthModal(true);
+      setAuthTab('login');
+      return;
+    }
+
+    if (!postContent.trim() && !postImageBase64) return;
+
+    const newPost: NexusPost = {
+      id: `post_${Date.now()}`,
+      authorId: currentUser.id,
+      authorName: currentUser.name,
+      authorAvatar: currentUser.avatar,
+      content: postContent.trim(),
+      imageUrl: postImageBase64 || undefined,
+      timeAgo: 'এখনই',
+      reactions: { like: 0, love: 0, care: 0, haha: 0, wow: 0, sad: 0, fire: 0 },
+      userReactions: {},
+      comments: []
+    };
+
+    setPosts([newPost, ...posts]);
+    setPostContent('');
+    setPostImageBase64(null);
+    showToast('আপনার পোস্ট সফলভাবে প্রকাশিত হয়েছে!');
+    gameSound.playScore();
+  };
+
+  // Confirm Delete Post
+  const handleConfirmDeletePost = () => {
+    if (!deleteConfirmPostId) return;
+    setPosts(posts.filter(p => p.id !== deleteConfirmPostId));
+    setDeleteConfirmPostId(null);
+    showToast('পোস্টটি সফলভাবে মুছে ফেলা হয়েছে।');
+    gameSound.playBounce();
+  };
+
+  // Reactions
+  const handleReact = (postId: string, reactionType: 'like' | 'love' | 'care' | 'haha' | 'wow' | 'sad' | 'fire') => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      setAuthTab('login');
+      return;
+    }
+
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        const prevReaction = p.userReactions[currentUser.id];
+        const newReactions = { ...p.reactions };
+        const newUserReactions = { ...p.userReactions };
+
+        if (prevReaction) {
+          newReactions[prevReaction] = Math.max(0, newReactions[prevReaction] - 1);
+        }
+
+        if (prevReaction === reactionType) {
+          delete newUserReactions[currentUser.id];
+        } else {
+          newReactions[reactionType] = (newReactions[reactionType] || 0) + 1;
+          newUserReactions[currentUser.id] = reactionType;
+        }
+
+        return {
+          ...p,
+          reactions: newReactions,
+          userReactions: newUserReactions
+        };
+      }
+      return p;
+    }));
+
+    setActiveReactionPickerId(null);
+    gameSound.playBounce();
+  };
+
+  // Add Comment
+  const handleAddComment = (postId: string) => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      setAuthTab('login');
+      return;
+    }
+
+    const text = commentInputs[postId];
+    if (!text || !text.trim()) return;
+
+    const newComment: NexusComment = {
+      id: `cmt_${Date.now()}`,
+      authorId: currentUser.id,
+      authorName: currentUser.name,
+      authorAvatar: currentUser.avatar,
+      text: text.trim(),
+      timeAgo: 'এখনই',
+      likes: 0,
+      likedBy: [],
+      replies: []
+    };
+
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          comments: [...p.comments, newComment]
+        };
+      }
+      return p;
+    }));
+
+    setCommentInputs({ ...commentInputs, [postId]: '' });
+    gameSound.playBounce();
+  };
+
+  // Toggle Comment Like
+  const handleLikeComment = (postId: string, commentId: string) => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      setAuthTab('login');
+      return;
+    }
+
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          comments: p.comments.map(c => {
+            if (c.id === commentId) {
+              const hasLiked = c.likedBy.includes(currentUser.id);
+              const newLikedBy = hasLiked
+                ? c.likedBy.filter(id => id !== currentUser.id)
+                : [...c.likedBy, currentUser.id];
+              return {
+                ...c,
+                likes: newLikedBy.length,
+                likedBy: newLikedBy
+              };
+            }
+            return c;
+          })
+        };
+      }
+      return p;
+    }));
+    gameSound.playBounce();
+  };
+
+  // Add Reply to Comment
+  const handleAddReply = (postId: string, commentId: string) => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      setAuthTab('login');
+      return;
+    }
+
+    const replyText = replyInputs[commentId];
+    if (!replyText || !replyText.trim()) return;
+
+    const newReply: NexusCommentReply = {
+      id: `rpl_${Date.now()}`,
+      authorId: currentUser.id,
+      authorName: currentUser.name,
+      authorAvatar: currentUser.avatar,
+      text: replyText.trim(),
+      timeAgo: 'এখনই'
+    };
+
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          comments: p.comments.map(c => {
+            if (c.id === commentId) {
+              return {
+                ...c,
+                replies: [...(c.replies || []), newReply]
+              };
+            }
+            return c;
+          })
+        };
+      }
+      return p;
+    }));
+
+    setReplyInputs({ ...replyInputs, [commentId]: '' });
+    setActiveReplyInputId(null);
+    gameSound.playBounce();
+  };
+
+  // Share Post Action
+  const handleSharePost = (postId: string) => {
+    showToast('🔗 পোস্টের লিংক কপি করা হয়েছে! বন্ধুদের সাথে শেয়ার করুন।');
+    gameSound.playBounce();
+  };
+
+  // Open Public User Profile
+  const handleOpenPublicProfile = (userObj: { id: string; name: string; avatar: string; identifier?: string }) => {
+    // Find full user in db or construct fallback
+    const fullUser = usersDb.find(u => u.id === userObj.id) || {
+      id: userObj.id,
+      name: userObj.name,
+      identifier: userObj.identifier || 'সম্মানিত মেম্বার',
+      password: '',
+      avatar: userObj.avatar,
+      bio: 'NEXUS সোশ্যাল নেটওয়ার্কের নিবন্ধিত মেম্বার।',
+      joinedAt: 'সক্রিয় সদস্য'
+    };
+
+    setViewingPublicUser(fullUser);
+    gameSound.playBounce();
+  };
+
+  const reactionConfigs = [
+    { type: 'like', label: '👍 লাইক' },
+    { type: 'love', label: '❤️ লাভ' },
+    { type: 'care', label: '🥰 কেয়ার' },
+    { type: 'haha', label: '😆 হাহা' },
+    { type: 'wow', label: '😮 ওয়াও' },
+    { type: 'sad', label: '😢 স্যাড' },
+    { type: 'fire', label: '🔥 ফায়ার' }
+  ];
+
+  let displayPosts = posts;
+  if (appActiveTab === 'myposts' && currentUser) {
+    displayPosts = posts.filter(p => p.authorId === currentUser.id);
+  }
+
+  return (
+    <section id="nexus-portal" className="mt-16 mb-16 scroll-mt-24">
+      {/* TOAST FLOATING ALERT */}
+      {toastText && (
+        <div className="fixed top-20 right-4 z-50 bg-[#0c1328] border border-cyan-400 text-cyan-200 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-bold animate-bounce-subtle flex items-center gap-2">
+          <Sparkles size={16} className="text-amber-400" />
+          <span>{toastText}</span>
+        </div>
+      )}
+
+      {/* HIDDEN FILE INPUTS */}
+      <input type="file" accept="image/*" ref={postImageFileRef} onChange={handlePostImageSelect} className="hidden" />
+      <input type="file" accept="image/*" ref={avatarFileRef} onChange={handleAvatarSelect} className="hidden" />
+
+      {/* NEXUS SECTION PORTAL CARD */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#0a0f24] via-[#070b1a] to-[#0e162f] border border-cyan-500/40 shadow-2xl space-y-4 relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-cyan-500/30 border border-white/20 shrink-0">
+              <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 3v6M12 15v6M3 12h6M15 12h6" />
+                <circle cx="12" cy="3" r="1.5" />
+                <circle cx="12" cy="21" r="1.5" />
+                <circle cx="3" cy="12" r="1.5" />
+                <circle cx="21" cy="12" r="1.5" />
+              </svg>
+            </div>
+
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-wider flex items-center gap-2">
+                <span className="bg-gradient-to-r from-cyan-400 via-sky-200 to-blue-400 bg-clip-text text-transparent uppercase">
+                  NEXUS
+                </span>
+                <span className="text-[10px] bg-cyan-950 border border-cyan-500/40 text-cyan-300 px-2.5 py-0.5 rounded-full font-mono font-bold tracking-normal">
+                  Social Network
+                </span>
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                ইমেইল বা ফোন দিয়ে যুক্ত হোন, ছবিসহ পোস্ট করুন, লাইক-কেয়ার রিঅ্যাক্ট দিন এবং কমেন্টে সরাসরি রিপ্লাই দিন!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {!currentUser ? (
+              <>
+                <button
+                  onClick={() => {
+                    setShowAuthModal(true);
+                    setAuthTab('login');
+                    setStatusMsg(null);
+                  }}
+                  className="px-3.5 py-2 rounded-2xl bg-slate-900 border border-slate-700 hover:border-cyan-500 text-xs font-bold text-gray-200 hover:text-white transition cursor-pointer shadow-sm"
+                >
+                  লগইন
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowAuthModal(true);
+                    setAuthTab('signup');
+                    setStatusMsg(null);
+                  }}
+                  className="px-4 py-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <UserCheck size={14} />
+                  <span>নতুন অ্যাকাউন্ট</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="px-3.5 py-2 rounded-2xl bg-[#040711] border border-cyan-500/40 text-xs font-bold text-cyan-300 hover:text-white flex items-center gap-1.5 cursor-pointer"
+              >
+                <img src={currentUser.avatar} alt="Profile" className="w-5 h-5 rounded-full object-cover border border-cyan-400" />
+                <span>{currentUser.name}</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                setIsAppOpen(true);
+                gameSound.playStart();
+              }}
+              className="px-5 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs transition shadow-xl shadow-emerald-500/30 flex items-center gap-2 cursor-pointer active:scale-95 animate-pulse"
+            >
+              <span>ওপেন করুন (Let's Go)</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
+          <div className="p-3 rounded-2xl bg-[#040711] border border-slate-800 flex items-center gap-2.5">
+            <Users size={18} className="text-cyan-400 shrink-0" />
+            <div>
+              <span className="text-[10px] text-gray-400 block font-bold">মোট সদস্য</span>
+              <span className="text-sm font-black text-white">{usersDb.length + 15} Members</span>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-[#040711] border border-slate-800 flex items-center gap-2.5">
+            <Globe size={18} className="text-emerald-400 shrink-0" />
+            <div>
+              <span className="text-[10px] text-gray-400 block font-bold">স্থায়ী পোস্টসমূহ</span>
+              <span className="text-sm font-black text-white">{posts.length} Posts</span>
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-1 p-3 rounded-2xl bg-[#040711] border border-slate-800 flex items-center gap-2.5">
+            <ShieldCheck size={18} className="text-amber-400 shrink-0" />
+            <div>
+              <span className="text-[10px] text-gray-400 block font-bold">অ্যাকাউন্ট অপশন</span>
+              <span className="text-xs font-black text-emerald-400">ইমেইল / মোবাইল ভেরিফাইড</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DEDICATED FULL-SCREEN WORKSPACE / PAGE VIEW */}
+      {isAppOpen && (
+        <div className="fixed inset-0 z-50 bg-[#050812] overflow-y-auto flex flex-col">
+          <div className="sticky top-0 z-40 bg-[#080d1e]/95 backdrop-blur-md border-b border-cyan-500/30 px-4 py-3 flex items-center justify-between gap-3 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-xs shadow">
+                NX
+              </div>
+              <h2 className="text-base font-black text-white uppercase tracking-wider hidden sm:block">
+                NEXUS Workspace
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-[#040711] p-1 rounded-2xl border border-slate-800">
+              <button
+                onClick={() => {
+                  setAppActiveTab('timeline');
+                  gameSound.playBounce();
+                }}
+                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+                  appActiveTab === 'timeline' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                টাইমলাইন
+              </button>
+
+              <button
+                onClick={() => {
+                  if (!currentUser) {
+                    setShowAuthModal(true);
+                    setAuthTab('login');
+                    return;
+                  }
+                  setAppActiveTab('myposts');
+                  gameSound.playBounce();
+                }}
+                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+                  appActiveTab === 'myposts' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                আমার পোস্টসমূহ
+              </button>
+
+              <button
+                onClick={() => {
+                  setAppActiveTab('users');
+                  gameSound.playBounce();
+                }}
+                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+                  appActiveTab === 'users' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                ইউজারবৃন্দ ({usersDb.length})
+              </button>
+            </div>
+
+            <button
+              onClick={() => setIsAppOpen(false)}
+              className="px-3.5 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <X size={15} />
+              <span>বন্ধ করুন</span>
+            </button>
+          </div>
+
+          <div className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 space-y-6">
+            
+            {/* POST COMPOSER */}
+            <div className="p-4 sm:p-5 rounded-3xl bg-[#090d1a] border border-slate-800 shadow-2xl space-y-3">
+              <form onSubmit={handleCreatePost} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
+                    alt="User"
+                    onClick={() => currentUser && handleOpenPublicProfile(currentUser)}
+                    className="w-10 h-10 rounded-full object-cover border border-cyan-400 shrink-0 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={postContent}
+                    onChange={(e) => setPostContent(e.target.value)}
+                    placeholder={
+                      currentUser 
+                        ? `${currentUser.name}, আপনার অ্যাকাউন্টে যা ইচ্ছে পোস্ট করুন...` 
+                        : 'পোস্ট করতে ইমেইল/ফোন দিয়ে অ্যাকাউন্ট খুলুন বা লগইন করুন...'
+                    }
+                    className="flex-1 px-4 py-2.5 rounded-2xl bg-[#040711] border border-slate-800 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition"
+                  />
+                </div>
+
+                {postImageBase64 && (
+                  <div className="relative rounded-2xl overflow-hidden border border-cyan-500/40 max-h-[240px] bg-black">
+                    <img src={postImageBase64} alt="Device Attachment" className="w-full h-full object-cover max-h-[240px]" />
+                    <button
+                      type="button"
+                      onClick={() => setPostImageBase64(null)}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/80 text-white hover:bg-red-600 flex items-center justify-center transition cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => postImageFileRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#040711] border border-slate-800 hover:border-cyan-500 text-xs text-gray-300 font-semibold transition cursor-pointer"
+                  >
+                    <ImageIcon size={15} className="text-emerald-400" />
+                    <span>গ্যালারি থেকে ছবি আপলোড</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={!postContent.trim() && !postImageBase64}
+                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <Send size={13} />
+                    <span>পোস্ট প্রকাশ করুন</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* TAB: USERS DIRECTORY */}
+            {appActiveTab === 'users' && (
+              <div className="space-y-4">
+                <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
+                  <Users size={16} className="text-cyan-400" />
+                  <span>সকল নিবন্ধিত ইউজার প্রোফাইল:</span>
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {usersDb.map((u) => (
+                    <div 
+                      key={u.id}
+                      onClick={() => handleOpenPublicProfile(u)}
+                      className="p-3.5 rounded-2xl bg-[#090d1a] border border-slate-800 hover:border-cyan-500 transition cursor-pointer flex items-center gap-3 group"
+                    >
+                      <img src={u.avatar} alt={u.name} className="w-11 h-11 rounded-full object-cover border border-cyan-400 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-extrabold text-xs text-white group-hover:text-cyan-400 transition truncate">{u.name}</h4>
+                        <p className="text-[10px] text-gray-400 font-mono truncate">{u.identifier}</p>
+                        <span className="text-[9px] text-cyan-400 font-bold block mt-1">প্রোফাইল ও পোস্টসমূহ দেখতে ক্লিক করুন ➔</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: POSTS TIMELINE */}
+            {appActiveTab !== 'users' && (
+              <div className="space-y-4">
+                {displayPosts.length === 0 ? (
+                  <div className="p-8 rounded-3xl bg-[#090d1a] border border-slate-800 text-center space-y-2">
+                    <p className="text-xs text-gray-400">কোনো পোস্ট পাওয়া যায়নি। প্রথম পোস্টটি শেয়ার করুন!</p>
+                  </div>
+                ) : (
+                  displayPosts.map((post) => {
+                    const userReaction = currentUser ? post.userReactions[currentUser.id] : null;
+                    const isMyPost = currentUser && currentUser.id === post.authorId;
+                    const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0);
+
+                    return (
+                      <div key={post.id} className="p-4 sm:p-5 rounded-3xl bg-[#090d1a] border border-slate-800 shadow-2xl space-y-3.5 relative overflow-hidden">
+                        {/* Post Header */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div 
+                            onClick={() => handleOpenPublicProfile({ id: post.authorId, name: post.authorName, avatar: post.authorAvatar })}
+                            className="flex items-center gap-3 cursor-pointer group"
+                          >
+                            <img src={post.authorAvatar} alt={post.authorName} className="w-10 h-10 rounded-full object-cover border border-cyan-400 shrink-0 group-hover:scale-105 transition" />
+                            <div>
+                              <h4 className="font-extrabold text-sm text-white group-hover:text-cyan-400 transition flex items-center gap-1">
+                                <span>{post.authorName}</span>
+                                <CheckCircle size={13} className="text-cyan-400 fill-cyan-500/20" />
+                              </h4>
+                              <p className="text-[10px] text-gray-400">{post.timeAgo}</p>
+                            </div>
+                          </div>
+
+                          {/* Delete Post Button with Confirmation Modal Trigger */}
+                          {isMyPost && (
+                            <button
+                              onClick={() => setDeleteConfirmPostId(post.id)}
+                              className="p-1.5 rounded-xl bg-red-950/60 hover:bg-red-600 text-red-400 hover:text-white transition cursor-pointer"
+                              title="পোস্টটি মুছুন"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+
+                        {post.content && (
+                          <p className="text-xs sm:text-sm text-gray-200 leading-relaxed font-normal whitespace-pre-line">
+                            {post.content}
+                          </p>
+                        )}
+
+                        {post.imageUrl && (
+                          <div className="rounded-2xl overflow-hidden bg-black border border-slate-800 max-h-[420px] flex items-center justify-center">
+                            <img src={post.imageUrl} alt="Nexus attachment" className="w-full h-full object-cover max-h-[420px]" />
+                          </div>
+                        )}
+
+                        {totalReactions > 0 && (
+                          <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1 border-t border-slate-800/40">
+                            <span className="font-bold text-cyan-300">
+                              👍 ❤️ 🥰 😆 😮 🔥 {totalReactions} জন রিঅ্যাক্ট দিয়েছেন
+                            </span>
+                            <span>{post.comments.length} কমেন্ট</span>
+                          </div>
+                        )}
+
+                        {/* Reaction Bar */}
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 relative text-xs font-bold text-gray-300">
+                          <div className="relative">
+                            <button
+                              onClick={() => setActiveReactionPickerId(activeReactionPickerId === post.id ? null : post.id)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                                userReaction ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-500/40' : 'hover:bg-slate-800 hover:text-white'
+                              }`}
+                            >
+                              <ThumbsUp size={15} className={userReaction ? 'fill-cyan-400' : ''} />
+                              <span>
+                                {userReaction === 'like' && '👍 লাইক'}
+                                {userReaction === 'love' && '❤️ লাভ'}
+                                {userReaction === 'care' && '🥰 কেয়ার'}
+                                {userReaction === 'haha' && '😆 হাহা'}
+                                {userReaction === 'wow' && '😮 ওয়াও'}
+                                {userReaction === 'sad' && '😢 স্যাড'}
+                                {userReaction === 'fire' && '🔥 ফায়ার'}
+                                {!userReaction && 'রিঅ্যাক্ট দিন'}
+                              </span>
+                            </button>
+
+                            {activeReactionPickerId === post.id && (
+                              <div className="absolute left-0 bottom-10 z-30 bg-[#0c1222] border border-cyan-500/50 rounded-2xl p-2 shadow-2xl flex items-center gap-1.5 animate-bounce-subtle">
+                                {reactionConfigs.map((r) => (
+                                  <button
+                                    key={r.type}
+                                    onClick={() => handleReact(post.id, r.type as any)}
+                                    className="px-2 py-1 rounded-xl hover:bg-slate-800 text-xs font-bold transition transform hover:scale-125 cursor-pointer shrink-0"
+                                    title={r.label}
+                                  >
+                                    <span>{r.label.split(' ')[0]}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5 hover:text-cyan-400 cursor-pointer">
+                            <MessageSquare size={15} />
+                            <span>কমেন্ট ({post.comments.length})</span>
+                          </div>
+
+                          <button
+                            onClick={() => handleSharePost(post.id)}
+                            className="flex items-center gap-1.5 hover:text-cyan-400 cursor-pointer"
+                          >
+                            <Share2 size={15} />
+                            <span>শেয়ার</span>
+                          </button>
+                        </div>
+
+                        {/* COMMENTS & REPLIES SECTION */}
+                        <div className="pt-2 space-y-2.5 border-t border-slate-800/40">
+                          {post.comments.length > 0 && (
+                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                              {post.comments.map((comment) => {
+                                const isCommentLiked = currentUser && comment.likedBy.includes(currentUser.id);
+
+                                return (
+                                  <div key={comment.id} className="p-3 rounded-2xl bg-[#040711] border border-slate-800/80 space-y-2">
+                                    <div className="flex items-start gap-2.5">
+                                      <img 
+                                        src={comment.authorAvatar} 
+                                        alt={comment.authorName} 
+                                        onClick={() => handleOpenPublicProfile({ id: comment.authorId, name: comment.authorName, avatar: comment.authorAvatar })}
+                                        className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0 mt-0.5 cursor-pointer" 
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between gap-1">
+                                          <span 
+                                            onClick={() => handleOpenPublicProfile({ id: comment.authorId, name: comment.authorName, avatar: comment.authorAvatar })}
+                                            className="font-extrabold text-xs text-cyan-400 hover:underline cursor-pointer"
+                                          >
+                                            {comment.authorName}
+                                          </span>
+                                          <span className="text-[9px] text-gray-500">{comment.timeAgo}</span>
+                                        </div>
+                                        <p className="text-xs text-gray-200 mt-0.5">{comment.text}</p>
+
+                                        {/* COMMENT LIKE & REPLY BUTTONS */}
+                                        <div className="flex items-center gap-4 mt-2 text-[11px] font-bold">
+                                          <button
+                                            onClick={() => handleLikeComment(post.id, comment.id)}
+                                            className={`flex items-center gap-1 transition cursor-pointer ${
+                                              isCommentLiked ? 'text-cyan-400 font-extrabold' : 'text-gray-400 hover:text-white'
+                                            }`}
+                                          >
+                                            <ThumbsUp size={12} className={isCommentLiked ? 'fill-cyan-400' : ''} />
+                                            <span>{comment.likes > 0 ? `${comment.likes} লাইক` : 'লাইক'}</span>
+                                          </button>
+
+                                          <button
+                                            onClick={() => setActiveReplyInputId(activeReplyInputId === comment.id ? null : comment.id)}
+                                            className="text-gray-400 hover:text-cyan-400 flex items-center gap-1 transition cursor-pointer"
+                                          >
+                                            <CornerDownRight size={12} />
+                                            <span>রিপ্লাই</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* NESTED REPLIES LIST */}
+                                    {comment.replies && comment.replies.length > 0 && (
+                                      <div className="ml-8 pl-3 border-l-2 border-slate-800 space-y-2 pt-1">
+                                        {comment.replies.map((reply) => (
+                                          <div key={reply.id} className="flex items-start gap-2 bg-[#080d1e] p-2 rounded-xl">
+                                            <img src={reply.authorAvatar} alt={reply.authorName} className="w-5 h-5 rounded-full object-cover shrink-0 mt-0.5" />
+                                            <div className="min-w-0 flex-1">
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-bold text-[11px] text-amber-300">{reply.authorName}</span>
+                                                <span className="text-[9px] text-gray-500">{reply.timeAgo}</span>
+                                              </div>
+                                              <p className="text-xs text-gray-300">{reply.text}</p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* NESTED REPLY INPUT FIELD */}
+                                    {activeReplyInputId === comment.id && (
+                                      <div className="ml-8 pt-1 flex items-center gap-2 animate-fade-in">
+                                        <input
+                                          type="text"
+                                          value={replyInputs[comment.id] || ''}
+                                          onChange={(e) => setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              handleAddReply(post.id, comment.id);
+                                            }
+                                          }}
+                                          placeholder={`${comment.authorName}-কে উত্তর লিখুন...`}
+                                          className="flex-1 px-3 py-1.5 rounded-xl bg-[#080d1e] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                                        />
+                                        <button
+                                          onClick={() => handleAddReply(post.id, comment.id)}
+                                          className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs cursor-pointer"
+                                        >
+                                          রিপ্লাই
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Add Comment Input */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <input
+                              type="text"
+                              value={commentInputs[post.id] || ''}
+                              onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddComment(post.id);
+                                }
+                              }}
+                              placeholder="কমেন্ট করুন (Enter চাপুন)..."
+                              className="flex-1 px-3.5 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                            />
+                            <button
+                              onClick={() => handleAddComment(post.id)}
+                              className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs cursor-pointer shadow-md"
+                            >
+                              কমেন্ট
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM DELETE POST MODAL */}
+      {deleteConfirmPostId && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setDeleteConfirmPostId(null)}
+        >
+          <div 
+            className="w-full max-w-sm bg-[#0c1220] border border-red-500/50 rounded-3xl p-6 shadow-2xl text-center space-y-4 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-red-950 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto shadow-lg animate-bounce-subtle">
+              <AlertTriangle size={26} />
+            </div>
+
+            <div>
+              <h3 className="font-extrabold text-base text-white">
+                পোস্ট মুছে ফেলার নিশ্চিতকরণ
+              </h3>
+              <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+                Are you sure you want to delete this post?<br />
+                আপনি কি নিশ্চিত যে এই পোস্টটি মুছে ফেলতে চান?
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setDeleteConfirmPostId(null)}
+                className="px-5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-gray-300 hover:text-white font-bold text-xs cursor-pointer"
+              >
+                বাতিল করুন
+              </button>
+
+              <button
+                onClick={handleConfirmDeletePost}
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs cursor-pointer shadow-lg shadow-red-600/30"
+              >
+                হ্যাঁ, মুছে ফেলুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PUBLIC USER PROFILE VIEW MODAL */}
+      {viewingPublicUser && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setViewingPublicUser(null)}
+        >
+          <div 
+            className="w-full max-w-lg bg-[#0c1220] border border-cyan-500/50 rounded-3xl p-6 shadow-2xl relative text-left my-auto space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+                <User size={18} className="text-cyan-400" />
+                <span>ইউজার প্রোফাইল তথ্য</span>
+              </h3>
+              <button
+                onClick={() => setViewingPublicUser(null)}
+                className="w-8 h-8 rounded-full bg-slate-900 text-gray-400 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Profile Info Card */}
+            <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#040711] border border-slate-800">
+              <img src={viewingPublicUser.avatar} alt={viewingPublicUser.name} className="w-16 h-16 rounded-full object-cover border-2 border-cyan-400 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <h4 className="font-extrabold text-base text-white flex items-center gap-1.5">
+                  <span>{viewingPublicUser.name}</span>
+                  <CheckCircle size={14} className="text-cyan-400 fill-cyan-500/20" />
+                </h4>
+                <p className="text-xs text-gray-400 font-mono">{viewingPublicUser.identifier}</p>
+                <p className="text-xs text-gray-300 mt-1 italic font-normal">"{viewingPublicUser.bio}"</p>
+                <span className="text-[10px] text-cyan-400 font-mono block mt-1">যোগদানের সময়: {viewingPublicUser.joinedAt}</span>
+              </div>
+            </div>
+
+            {/* User Posts Count */}
+            <div>
+              <h4 className="font-extrabold text-xs text-gray-300 mb-2">
+                {viewingPublicUser.name} এর সকল প্রকাশিত পোস্টসমূহ ({posts.filter(p => p.authorId === viewingPublicUser.id).length}):
+              </h4>
+
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                {posts.filter(p => p.authorId === viewingPublicUser.id).length === 0 ? (
+                  <p className="text-xs text-gray-500 italic p-3 text-center bg-[#040711] rounded-xl">
+                    এই ইউজার এখনও কোনো পোস্ট প্রকাশ করেননি।
+                  </p>
+                ) : (
+                  posts.filter(p => p.authorId === viewingPublicUser.id).map(post => (
+                    <div key={post.id} className="p-3 rounded-2xl bg-[#040711] border border-slate-800 space-y-1.5">
+                      <span className="text-[10px] text-gray-500 block font-mono">{post.timeAgo}</span>
+                      <p className="text-xs text-gray-200">{post.content}</p>
+                      {post.imageUrl && (
+                        <img src={post.imageUrl} alt="post" className="w-full h-32 object-cover rounded-xl mt-1" />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEXUS AUTH MODAL */}
+      {showAuthModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setShowAuthModal(false)}
+        >
+          <div 
+            className="w-full max-w-md bg-[#0c1220] border border-cyan-500/50 rounded-3xl p-6 shadow-2xl relative text-left my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-slate-950 text-xs shadow">
+                  NX
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-white uppercase tracking-wider">
+                    {authTab === 'login' && 'NEXUS অ্যাকাউন্ট লগইন'}
+                    {authTab === 'signup' && 'NEXUS নতুন অ্যাকাউন্ট খুলুন'}
+                    {authTab === 'reset' && 'পাসওয়ার্ড রিসেট করুন'}
+                  </h3>
+                  <p className="text-[11px] text-gray-400">
+                    ইমেইল আইডি বা মোবাইল নম্বর ব্যবহার করে অ্যাকাউন্ট সুবিধা
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 text-gray-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {statusMsg && (
+              <div className={`p-3 rounded-2xl text-xs font-bold mb-3 ${
+                statusMsg.type === 'error' ? 'bg-red-950/80 border border-red-500/40 text-red-300' : 'bg-emerald-950/80 border border-emerald-500/40 text-emerald-300'
+              }`}>
+                {statusMsg.text}
+              </div>
+            )}
+
+            {/* LOGIN FORM */}
+            {authTab === 'login' && (
+              <form onSubmit={handleLogin} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">ইমেইল আইডি বা মোবাইল নম্বর:</label>
+                  <input
+                    type="text"
+                    required
+                    value={formIdentifier}
+                    onChange={(e) => setFormIdentifier(e.target.value)}
+                    placeholder="user@gmail.com বা 017xxxxxxxx"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">পাসওয়ার্ড:</label>
+                  <input
+                    type="password"
+                    required
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthTab('reset');
+                      setResetStep('identifier');
+                      setStatusMsg(null);
+                    }}
+                    className="text-cyan-400 hover:underline font-semibold"
+                  >
+                    পাসওয়ার্ড ভুলে গেছেন?
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthTab('signup');
+                      setStatusMsg(null);
+                    }}
+                    className="text-cyan-400 hover:underline font-semibold"
+                  >
+                    নতুন অ্যাকাউন্ট খুলুন
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 cursor-pointer active:scale-95"
+                >
+                  লগইন করুন
+                </button>
+              </form>
+            )}
+
+            {/* SIGNUP FORM */}
+            {authTab === 'signup' && (
+              <form onSubmit={handleSignup} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">পূর্ণ নাম (Full Name):</label>
+                  <input
+                    type="text"
+                    required
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    placeholder="যেমন: ফাহাদ আহমেদ"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">ইমেইল আইডি বা মোবাইল নম্বর:</label>
+                  <input
+                    type="text"
+                    required
+                    value={formIdentifier}
+                    onChange={(e) => setFormIdentifier(e.target.value)}
+                    placeholder="user@gmail.com বা 017xxxxxxxx"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর):</label>
+                  <input
+                    type="password"
+                    required
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-300 mb-1">জন্ম তারিখ:</label>
+                    <input
+                      type="date"
+                      value={formDob}
+                      onChange={(e) => setFormDob(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-300 mb-1">জেন্ডার:</label>
+                    <select
+                      value={formGender}
+                      onChange={(e) => setFormGender(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="male">পুরুষ (Male)</option>
+                      <option value="female">মহিলা (Female)</option>
+                      <option value="other">অন্যান্য</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">প্রোফাইল পিকচার (গ্যালারি থেকে যোগ করুন):</label>
+                  <div className="flex items-center gap-3">
+                    <img src={formAvatar} alt="Preview" className="w-10 h-10 rounded-full object-cover border border-cyan-400" />
+                    <button
+                      type="button"
+                      onClick={() => avatarFileRef.current?.click()}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#040711] border border-slate-800 hover:border-cyan-500 text-xs text-cyan-300 font-bold transition cursor-pointer"
+                    >
+                      গ্যালারি থেকে ছবি সিলেক্ট করুন
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthTab('login');
+                      setStatusMsg(null);
+                    }}
+                    className="text-xs text-cyan-400 hover:underline font-semibold"
+                  >
+                    আগে থেকেই অ্যাকাউন্ট আছে?
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 cursor-pointer active:scale-95"
+                  >
+                    রেজিস্ট্রেশন সম্পূর্ণ করুন
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* RESET PASSWORD */}
+            {authTab === 'reset' && (
+              <form onSubmit={handleResetPassword} className="space-y-3.5">
+                {resetStep === 'identifier' && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">আপনার নিবন্ধিত ইমেইল বা ফোন নম্বর দিন:</label>
+                    <input
+                      type="text"
+                      required
+                      value={formIdentifier}
+                      onChange={(e) => setFormIdentifier(e.target.value)}
+                      placeholder="user@gmail.com বা 017xxxxxxxx"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                )}
+
+                {resetStep === 'code' && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">৪ ডিজিট ভেরিফিকেশন কোড লিখুন (কোড: 2026):</label>
+                    <input
+                      type="text"
+                      required
+                      value={resetCode}
+                      onChange={(e) => setResetCode(e.target.value)}
+                      placeholder="2026"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white font-mono text-center tracking-widest text-base focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                )}
+
+                {resetStep === 'newpass' && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">নতুন সিকিউর পাসওয়ার্ড দিন:</label>
+                    <input
+                      type="password"
+                      required
+                      value={newPasswordInput}
+                      onChange={(e) => setNewPasswordInput(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                )}
+
+                <div className="pt-2 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthTab('login');
+                      setResetStep('identifier');
+                      setStatusMsg(null);
+                    }}
+                    className="text-xs text-cyan-400 hover:underline font-semibold"
+                  >
+                    লগইন ফর্মে ফিরে যান
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 cursor-pointer active:scale-95"
+                  >
+                    {resetStep === 'identifier' && 'কোড পাঠান'}
+                    {resetStep === 'code' && 'ভেরিফাই করুন'}
+                    {resetStep === 'newpass' && 'পাসওয়ার্ড সেভ করুন'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* USER PROFILE MODAL */}
+      {showProfileModal && currentUser && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setShowProfileModal(false)}
+        >
+          <div 
+            className="w-full max-w-md bg-[#0c1220] border border-cyan-500/50 rounded-3xl p-6 shadow-2xl relative text-left my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
+              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+                <User size={18} className="text-cyan-400" />
+                <span>আমার NEXUS প্রোফাইল</span>
+              </h3>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-900 text-gray-400 hover:text-white flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#040711] border border-slate-800">
+                <div className="relative">
+                  <img src={currentUser.avatar} alt={currentUser.name} className="w-14 h-14 rounded-full object-cover border-2 border-cyan-400" />
+                  <button
+                    onClick={() => avatarFileRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 p-1 rounded-full bg-cyan-500 text-slate-950 hover:scale-110 transition shadow cursor-pointer"
+                    title="গ্যালারি থেকে ছবি পরিবর্তন করুন"
+                  >
+                    <Camera size={12} />
+                  </button>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-sm text-white">{currentUser.name}</h4>
+                  <p className="text-xs text-gray-400">{currentUser.identifier}</p>
+                  <p className="text-[10px] text-cyan-400 font-mono mt-0.5">যোগদান: {currentUser.joinedAt}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-300">বায়ো পরিবর্তন করুন:</label>
+                <input
+                  type="text"
+                  value={currentUser.bio}
+                  onChange={(e) => {
+                    const updated = { ...currentUser, bio: e.target.value };
+                    setCurrentUser(updated);
+                    setUsersDb(usersDb.map(u => u.id === currentUser.id ? updated : u));
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-between items-center">
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-xl bg-red-950/80 hover:bg-red-600 text-red-300 hover:text-white font-extrabold text-xs transition border border-red-500/30 cursor-pointer"
+                >
+                  লগ-আউট করুন
+                </button>
+
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="px-6 py-2 rounded-xl bg-cyan-500 text-slate-950 font-extrabold text-xs cursor-pointer shadow"
+                >
+                  সম্পন্ন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};

@@ -1,0 +1,6 @@
+{
+  "name": "Sadman's Portfolio",
+  "description": "The official website for Sadman, showcasing his music and exclusive merchandise.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
