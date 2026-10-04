@@ -329,6 +329,9 @@ const loadPermanentMessages = (): ChatMessage[] => {
 
 const loadPermanentActiveUser = (): UserProfile | null => {
   try {
+    const isLoggedOut = localStorage.getItem('permanent_community_logged_out_flag');
+    if (isLoggedOut === 'true') return null;
+
     const saved = localStorage.getItem(MASTER_KEYS.ACTIVE_USER);
     if (saved) return JSON.parse(saved);
 
@@ -722,6 +725,9 @@ export const CommunityForum: React.FC = () => {
       } catch {}
 
       setCurrentUser(newUser);
+      try {
+        localStorage.removeItem('permanent_community_logged_out_flag');
+      } catch {}
       setShowAuthModal(false);
       resetAuthForm();
       gameSound.score();
@@ -744,6 +750,9 @@ export const CommunityForum: React.FC = () => {
       }
 
       setCurrentUser(matchedUser);
+      try {
+        localStorage.removeItem('permanent_community_logged_out_flag');
+      } catch {}
       setShowAuthModal(false);
       resetAuthForm();
       gameSound.score();
@@ -771,6 +780,10 @@ export const CommunityForum: React.FC = () => {
     setViewingProfile(null);
     setIsEditingMyProfile(false);
     setViewTab('chat');
+    try {
+      localStorage.setItem('permanent_community_logged_out_flag', 'true');
+      localStorage.removeItem(MASTER_KEYS.ACTIVE_USER);
+    } catch {}
     gameSound.slice();
   };
 
@@ -1737,7 +1750,7 @@ export const CommunityForum: React.FC = () => {
 
       {/* LOCKED GATEWAY IF NOT LOGGED IN */}
       {!currentUser ? (
-        <div className="rounded-2xl md:rounded-3xl bg-[#080d1a] border border-slate-800/90 shadow-2xl p-6 sm:p-10 text-center relative overflow-hidden">
+        <div className="rounded-2xl md:rounded-3xl bg-[#080d1a] border border-slate-800/90 shadow-2xl p-6 sm:p-10 text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.002] hover:border-amber-500/60 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]">
           <div className="max-w-md mx-auto flex flex-col items-center">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-xl shadow-orange-600/30 mb-4 animate-pulse">
               <Lock size={26} />
@@ -1866,7 +1879,7 @@ export const CommunityForum: React.FC = () => {
           </div>
 
           {/* MAIN CONTAINER */}
-          <div className="rounded-2xl md:rounded-3xl bg-[#070c18] border border-slate-800/90 shadow-2xl overflow-hidden p-3 sm:p-4 min-h-[500px] flex flex-col">
+          <div className="rounded-2xl md:rounded-3xl bg-[#070c18] border border-slate-800/90 shadow-2xl overflow-hidden p-3 sm:p-4 min-h-[500px] flex flex-col transition-all duration-500 hover:scale-[1.002] hover:border-amber-500/60 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]">
             
             {/* Global Group Call Incoming/Active Broadcast Banner for all members */}
             {isGlobalCallActive && !isInGroupCall && (

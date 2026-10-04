@@ -25,30 +25,30 @@ import {
   Trash2,
   Camera,
   ShieldCheck,
-  RefreshCw,
-  ExternalLink,
   ChevronRight,
-  Maximize2,
-  Users,
-  Grid,
-  Search,
-  Check,
-  CornerDownRight,
   AlertTriangle,
-  Copy
+  CornerDownRight,
+  Users,
+  MapPin,
+  GraduationCap,
+  Briefcase
 } from 'lucide-react';
 import { gameSound } from '../utils/gameSound';
 
 export interface NexusUser {
   id: string;
   name: string;
-  identifier: string; // Email or Phone number
+  email: string;
+  phone: string;
   password: string;
   avatar: string;
   bio: string;
   joinedAt: string;
-  dob?: string;
-  gender?: string;
+  dob: string;
+  gender: string;
+  hometown?: string;
+  school?: string;
+  occupation?: string;
 }
 
 export interface NexusCommentReply {
@@ -94,31 +94,88 @@ export interface NexusPost {
 }
 
 export const FahadEntertainmentZone: React.FC = () => {
-  // Current Logged-In User
+  // Current Logged-In User with Automatic Backwards Compatibility and Legacy Keys Migration
   const [currentUser, setCurrentUser] = useState<NexusUser | null>(() => {
     try {
-      const saved = localStorage.getItem('nexus_current_user_v4');
-      return saved ? JSON.parse(saved) : null;
+      const stable = localStorage.getItem('nexus_stable_current_user');
+      if (stable) return JSON.parse(stable);
+
+      const legacyKeys = [
+        'nexus_current_user_v6',
+        'nexus_current_user_v5',
+        'nexus_current_user_v4',
+        'nexus_current_user_v3',
+        'nexus_current_user_v2',
+        'fahadgram_user_v1'
+      ];
+      for (const k of legacyKeys) {
+        const val = localStorage.getItem(k);
+        if (val) {
+          try {
+            localStorage.setItem('nexus_stable_current_user', val);
+            return JSON.parse(val);
+          } catch {}
+        }
+      }
+      return null;
     } catch {
       return null;
     }
   });
 
-  // Registered Users Database
+  // Registered Users Database with Automatic Compatibility Migration
   const [usersDb, setUsersDb] = useState<NexusUser[]>(() => {
     try {
-      const saved = localStorage.getItem('nexus_users_db_v4');
-      return saved ? JSON.parse(saved) : [];
+      const stable = localStorage.getItem('nexus_stable_users_db');
+      if (stable) return JSON.parse(stable);
+
+      const legacyKeys = [
+        'nexus_users_db_v6',
+        'nexus_users_db_v5',
+        'nexus_users_db_v4',
+        'nexus_users_db_v3',
+        'nexus_users_db_v2',
+        'fahadgram_users_v1'
+      ];
+      for (const k of legacyKeys) {
+        const val = localStorage.getItem(k);
+        if (val) {
+          try {
+            localStorage.setItem('nexus_stable_users_db', val);
+            return JSON.parse(val);
+          } catch {}
+        }
+      }
+      return [];
     } catch {
       return [];
     }
   });
 
-  // Permanent Posts Database
+  // Permanent Posts Database with Automatic Compatibility Migration
   const [posts, setPosts] = useState<NexusPost[]>(() => {
     try {
-      const saved = localStorage.getItem('nexus_posts_db_v4');
-      return saved ? JSON.parse(saved) : [];
+      const stable = localStorage.getItem('nexus_stable_posts_db');
+      if (stable) return JSON.parse(stable);
+
+      const legacyKeys = [
+        'nexus_posts_db_v6',
+        'nexus_posts_db_v5',
+        'nexus_posts_db_v4',
+        'nexus_posts_db_v3',
+        'nexus_posts_db_v2',
+        'fahadgram_posts_v1'
+      ];
+      for (const k of legacyKeys) {
+        const val = localStorage.getItem(k);
+        if (val) {
+          try {
+            localStorage.setItem('nexus_stable_posts_db', val);
+            return JSON.parse(val);
+          } catch {}
+        }
+      }
+      return [];
     } catch {
       return [];
     }
@@ -128,27 +185,50 @@ export const FahadEntertainmentZone: React.FC = () => {
   const [isAppOpen, setIsAppOpen] = useState<boolean>(false);
   const [appActiveTab, setAppActiveTab] = useState<'timeline' | 'myposts' | 'users'>('timeline');
 
-  // Modals
+  // Search Queries inside Workspace
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [postSearchQuery, setPostSearchQuery] = useState('');
+
+  // Modals & Popups
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [authTab, setAuthTab] = useState<'login' | 'signup' | 'reset'>('login');
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
-  
-  // Public User Profile View Modal
   const [viewingPublicUser, setViewingPublicUser] = useState<NexusUser | null>(null);
-
-  // Post Delete Confirmation Modal State
   const [deleteConfirmPostId, setDeleteConfirmPostId] = useState<string | null>(null);
 
-  // Form Fields - Email or Phone
+  // Form Fields - Signup (Simplified as requested: Full Name, Identifier (Email or Phone), Password, DOB, Gender)
   const [formName, setFormName] = useState('');
-  const [formIdentifier, setFormIdentifier] = useState('');
+  const [formIdentifier, setFormIdentifier] = useState(''); // Unified single field for signup (either Email or Phone)
   const [formPassword, setFormPassword] = useState('');
   const [formDob, setFormDob] = useState('');
   const [formGender, setFormGender] = useState('male');
-  const [formBio, setFormBio] = useState('');
   const [formAvatar, setFormAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
 
-  // Reset Password Flow
+  // Login Form fields
+  const [loginEmailOrPhone, setLoginEmailOrPhone] = useState(() => {
+    try {
+      return localStorage.getItem('nexus_remembered_username') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [loginPassword, setLoginPassword] = useState(() => {
+    try {
+      return localStorage.getItem('nexus_remembered_password') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [rememberMe, setRememberMe] = useState(() => {
+    try {
+      return localStorage.getItem('nexus_remember_me') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Password Reset Flow
+  const [resetEmailOrPhone, setResetEmailOrPhone] = useState('');
   const [resetCode, setResetCode] = useState('');
   const [resetStep, setResetStep] = useState<'identifier' | 'code' | 'newpass'>('identifier');
   const [newPasswordInput, setNewPasswordInput] = useState('');
@@ -165,31 +245,43 @@ export const FahadEntertainmentZone: React.FC = () => {
   const [activeReplyInputId, setActiveReplyInputId] = useState<string | null>(null); // commentId
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({}); // commentId -> reply text
 
-  // Toast Banner
+  // Toast banner
   const [toastText, setToastText] = useState<string | null>(null);
-
-  // Status Alerts
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // File Inputs
+  // Refs
   const postImageFileRef = useRef<HTMLInputElement | null>(null);
   const avatarFileRef = useRef<HTMLInputElement | null>(null);
 
-  // Sync to LocalStorage
+  const reactionConfigs = [
+    { type: 'like', label: '👍 লাইক' },
+    { type: 'love', label: '❤️ লাভ' },
+    { type: 'care', label: '🥰 কেয়ার' },
+    { type: 'haha', label: '😆 হাহা' },
+    { type: 'wow', label: '😮 ওয়াও' },
+    { type: 'sad', label: '😢 স্যাড' },
+    { type: 'fire', label: '🔥 ফায়ার' }
+  ];
+
+  // Sync databases to stable persistent localStorage keys
   useEffect(() => {
-    localStorage.setItem('nexus_users_db_v4', JSON.stringify(usersDb));
+    localStorage.setItem('nexus_stable_users_db', JSON.stringify(usersDb));
+    localStorage.setItem('nexus_users_db_v6', JSON.stringify(usersDb));
   }, [usersDb]);
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('nexus_current_user_v4', JSON.stringify(currentUser));
+      localStorage.setItem('nexus_stable_current_user', JSON.stringify(currentUser));
+      localStorage.setItem('nexus_current_user_v6', JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem('nexus_current_user_v4');
+      localStorage.removeItem('nexus_stable_current_user');
+      localStorage.removeItem('nexus_current_user_v6');
     }
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('nexus_posts_db_v4', JSON.stringify(posts));
+    localStorage.setItem('nexus_stable_posts_db', JSON.stringify(posts));
+    localStorage.setItem('nexus_posts_db_v6', JSON.stringify(posts));
   }, [posts]);
 
   const showToast = (msg: string) => {
@@ -197,14 +289,93 @@ export const FahadEntertainmentZone: React.FC = () => {
     setTimeout(() => setToastText(null), 3000);
   };
 
-  // Signup
+  const calculateAge = (dobString: string): number => {
+    if (!dobString) return 0;
+    const birthDate = new Date(dobString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Signup with strict validation (Either Email OR Phone Number)
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setStatusMsg(null);
 
+    if (formName.trim().length < 3) {
+      setStatusMsg({ type: 'error', text: 'অনুগ্রহ করে সঠিক পূর্ণ নাম প্রদান করুন (কমপক্ষে ৩ অক্ষর)।' });
+      gameSound.playBounce();
+      return;
+    }
+
     const inputVal = formIdentifier.trim();
     if (!inputVal) {
-      setStatusMsg({ type: 'error', text: 'অনুগ্রহ করে একটি ইমেইল আইডি বা ফোন নম্বর প্রদান করুন।' });
+      setStatusMsg({ type: 'error', text: 'অনুগ্রহ করে সঠিক ইমেইল অথবা মোবাইল নম্বর প্রদান করুন।' });
+      gameSound.playBounce();
+      return;
+    }
+
+    // Determine input type
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^01[3-9]\d{8}$/;
+
+    const isEmail = emailRegex.test(inputVal.toLowerCase());
+    const isPhone = phoneRegex.test(inputVal);
+
+    if (!isEmail && !isPhone) {
+      setStatusMsg({ 
+        type: 'error', 
+        text: 'ভুল ফরম্যাট! সঠিক ইমেইল (যেমন: user@gmail.com) অথবা সঠিক ১১ ডিজিটের বাংলাদেশী মোবাইল নম্বর (যেমন: 01712345678) প্রদান করুন।' 
+      });
+      gameSound.playBounce();
+      return;
+    }
+
+    let emailVal = '';
+    let phoneVal = '';
+
+    if (isEmail) {
+      emailVal = inputVal.toLowerCase();
+      // Block disposable domains
+      const tempEmailDomains = ['tempmail.com', 'mailinator.com', '10minutemail.com', 'yopmail.com', 'temp-mail.org', 'dispostable.com', 'guerrillamail.com', 'tempmail.net'];
+      const emailDomain = emailVal.split('@')[1];
+      if (tempEmailDomains.includes(emailDomain)) {
+        setStatusMsg({ type: 'error', text: 'ফেক বা টেম্পোরারি ইমেইল ডোমেন ব্যবহার করা যাবে না। দয়া করে সঠিক ইমেইল দিন।' });
+        gameSound.playBounce();
+        return;
+      }
+
+      // Check duplicate Email
+      const existsEmail = usersDb.find(u => u.email === emailVal);
+      if (existsEmail) {
+        setStatusMsg({ type: 'error', text: 'এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে! লগইন করুন।' });
+        gameSound.playBounce();
+        return;
+      }
+    } else {
+      phoneVal = inputVal;
+      // Check duplicate Phone
+      const existsPhone = usersDb.find(u => u.phone === phoneVal);
+      if (existsPhone) {
+        setStatusMsg({ type: 'error', text: 'এই মোবাইল নম্বর দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে! লগইন করুন।' });
+        gameSound.playBounce();
+        return;
+      }
+    }
+
+    if (!formDob) {
+      setStatusMsg({ type: 'error', text: 'জন্ম তারিখ সঠিকভাবে পূরণ করতে হবে।' });
+      gameSound.playBounce();
+      return;
+    }
+
+    const age = calculateAge(formDob);
+    if (age < 13 || age > 115) {
+      setStatusMsg({ type: 'error', text: `NEXUS ব্যবহারের জন্য বয়স কমপক্ষে ১৩ বছর হতে হবে। আপনার বর্তমান বয়স: ${age} বছর।` });
       gameSound.playBounce();
       return;
     }
@@ -215,23 +386,19 @@ export const FahadEntertainmentZone: React.FC = () => {
       return;
     }
 
-    const existing = usersDb.find(u => u.identifier.toLowerCase() === inputVal.toLowerCase());
-    if (existing) {
-      setStatusMsg({ type: 'error', text: 'এই ইমেইল বা ফোন নম্বর দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে! লগইন করুন।' });
-      gameSound.playBounce();
-      return;
-    }
-
+    // Save strictly authenticated user
     const newUser: NexusUser = {
       id: `usr_${Date.now()}`,
       name: formName.trim(),
-      identifier: inputVal.toLowerCase(),
+      email: emailVal,
+      phone: phoneVal,
       password: formPassword,
       avatar: formAvatar,
-      bio: formBio.trim() || 'NEXUS সোশ্যাল মিডিয়ার সক্রিয় সদস্য!',
+      bio: 'NEXUS সোশ্যাল মিডিয়ার সক্রিয় সদস্য!',
       joinedAt: new Date().toLocaleDateString('bn-BD'),
       dob: formDob,
       gender: formGender
+      // Optional biodata (Hometown, School, Occupation) will be added later by the user in their profile!
     };
 
     setUsersDb([...usersDb, newUser]);
@@ -239,6 +406,12 @@ export const FahadEntertainmentZone: React.FC = () => {
     setShowAuthModal(false);
     showToast('🎉 NEXUS অ্যাকাউন্ট সফলভাবে রেজিস্ট্রেশন হয়েছে!');
     gameSound.playScore();
+
+    if (rememberMe) {
+      localStorage.setItem('nexus_remembered_username', inputVal);
+      localStorage.setItem('nexus_remembered_password', formPassword);
+      localStorage.setItem('nexus_remember_me', 'true');
+    }
   };
 
   // Login
@@ -246,12 +419,28 @@ export const FahadEntertainmentZone: React.FC = () => {
     e.preventDefault();
     setStatusMsg(null);
 
+    const credentialInput = loginEmailOrPhone.trim().toLowerCase();
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^01[3-9]\d{8}$/;
+    const isEmailFormat = emailRegex.test(credentialInput);
+    const isPhoneFormat = phoneRegex.test(credentialInput);
+
+    if (!isEmailFormat && !isPhoneFormat) {
+      setStatusMsg({ 
+        type: 'error', 
+        text: 'অনুগ্রহ করে সঠিক ফরম্যাটের ইমেইল (যেমন: user@gmail.com) অথবা সঠিক ১১ ডিজিটের মোবাইল নম্বর (যেমন: 01712345678) প্রদান করুন।' 
+      });
+      gameSound.playBounce();
+      return;
+    }
+
     const user = usersDb.find(
-      u => u.identifier.toLowerCase() === formIdentifier.trim().toLowerCase() && u.password === formPassword
+      u => (u.email.toLowerCase() === credentialInput || u.phone === credentialInput) && u.password === loginPassword
     );
 
     if (!user) {
-      setStatusMsg({ type: 'error', text: 'ইমেইল/ফোন নম্বর বা পাসওয়ার্ড সঠিক নয়! আবার চেষ্টা করুন।' });
+      setStatusMsg({ type: 'error', text: 'এই ইমেইল বা ফোন নম্বরের কোনো অ্যাকাউন্ট পাওয়া যায়নি অথবা পাসওয়ার্ড ভুল!' });
       gameSound.playBounce();
       return;
     }
@@ -261,24 +450,35 @@ export const FahadEntertainmentZone: React.FC = () => {
     setStatusMsg(null);
     showToast(`স্বাগতম, ${user.name}!`);
     gameSound.playScore();
+
+    if (rememberMe) {
+      localStorage.setItem('nexus_remembered_username', loginEmailOrPhone);
+      localStorage.setItem('nexus_remembered_password', loginPassword);
+      localStorage.setItem('nexus_remember_me', 'true');
+    } else {
+      localStorage.removeItem('nexus_remembered_username');
+      localStorage.removeItem('nexus_remembered_password');
+      localStorage.setItem('nexus_remember_me', 'false');
+    }
   };
 
-  // Password Reset Flow
+  // Reset Password Flow
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (resetStep === 'identifier') {
-      const user = usersDb.find(u => u.identifier.toLowerCase() === formIdentifier.trim().toLowerCase());
+      const target = resetEmailOrPhone.trim().toLowerCase();
+      const user = usersDb.find(u => u.email.toLowerCase() === target || u.phone === target);
       if (!user) {
-        setStatusMsg({ type: 'error', text: 'এই ইমেইল বা ফোন নম্বর পাওয়া যায়নি।' });
+        setStatusMsg({ type: 'error', text: 'এই ইমেইল বা ফোন নম্বরটি নিবন্ধিত নয়।' });
         gameSound.playBounce();
         return;
       }
       setResetStep('code');
-      setStatusMsg({ type: 'success', text: 'ভেরিফিকেশন কোড পাঠানো হয়েছে (কোড: 2026)।' });
+      setStatusMsg({ type: 'success', text: 'আপনার নাম্বারে ৪ ডিজিটের কোড পাঠানো হয়েছে (কোড: 2026)।' });
       gameSound.playBounce();
     } else if (resetStep === 'code') {
       if (resetCode !== '2026') {
-        setStatusMsg({ type: 'error', text: 'ভুল কোড! আবার চেষ্টা করুন (সঠিক কোড: 2026)।' });
+        setStatusMsg({ type: 'error', text: 'ভুল কোড! আবার চেষ্টা করুন (সদস্য কোড: 2026)।' });
         gameSound.playBounce();
         return;
       }
@@ -292,21 +492,20 @@ export const FahadEntertainmentZone: React.FC = () => {
       }
 
       setUsersDb(usersDb.map(u => {
-        if (u.identifier.toLowerCase() === formIdentifier.trim().toLowerCase()) {
+        if (u.email.toLowerCase() === resetEmailOrPhone.trim().toLowerCase() || u.phone === resetEmailOrPhone.trim()) {
           return { ...u, password: newPasswordInput };
         }
         return u;
       }));
 
-      setStatusMsg({ type: 'success', text: 'পাসওয়ার্ড পরিবর্তন সফল হয়েছে! এখন লগইন করুন।' });
+      setStatusMsg({ type: 'success', text: 'পাসওয়ার্ড পরিবর্তন সফল হয়েছে! নতুন পাসওয়ার্ড দিয়ে লগইন করুন।' });
       setAuthTab('login');
       setResetStep('identifier');
-      setFormPassword(newPasswordInput);
+      setLoginPassword(newPasswordInput);
       gameSound.playScore();
     }
   };
 
-  // Logout
   const handleLogout = () => {
     setCurrentUser(null);
     setShowProfileModal(false);
@@ -314,7 +513,6 @@ export const FahadEntertainmentZone: React.FC = () => {
     gameSound.playBounce();
   };
 
-  // Local Gallery Uploads
   const handlePostImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -342,6 +540,7 @@ export const FahadEntertainmentZone: React.FC = () => {
           const updated = { ...currentUser, avatar: url };
           setCurrentUser(updated);
           setUsersDb(usersDb.map(u => u.id === currentUser.id ? updated : u));
+          showToast('📸 প্রোফাইল পিকচার সফলভাবে পরিবর্তন করা হয়েছে!');
         }
         gameSound.playBounce();
       }
@@ -380,16 +579,16 @@ export const FahadEntertainmentZone: React.FC = () => {
     gameSound.playScore();
   };
 
-  // Confirm Delete Post
+  // Confirm delete post
   const handleConfirmDeletePost = () => {
     if (!deleteConfirmPostId) return;
     setPosts(posts.filter(p => p.id !== deleteConfirmPostId));
     setDeleteConfirmPostId(null);
-    showToast('পোস্টটি সফলভাবে মুছে ফেলা হয়েছে।');
+    showToast('পোস্টটি স্থায়ীভাবে মুছে ফেলা হয়েছে।');
     gameSound.playBounce();
   };
 
-  // Reactions
+  // Reaction Handling
   const handleReact = (postId: string, reactionType: 'like' | 'love' | 'care' | 'haha' | 'wow' | 'sad' | 'fire') => {
     if (!currentUser) {
       setShowAuthModal(true);
@@ -427,7 +626,7 @@ export const FahadEntertainmentZone: React.FC = () => {
     gameSound.playBounce();
   };
 
-  // Add Comment
+  // Comments
   const handleAddComment = (postId: string) => {
     if (!currentUser) {
       setShowAuthModal(true);
@@ -464,7 +663,6 @@ export const FahadEntertainmentZone: React.FC = () => {
     gameSound.playBounce();
   };
 
-  // Toggle Comment Like
   const handleLikeComment = (postId: string, commentId: string) => {
     if (!currentUser) {
       setShowAuthModal(true);
@@ -497,7 +695,6 @@ export const FahadEntertainmentZone: React.FC = () => {
     gameSound.playBounce();
   };
 
-  // Add Reply to Comment
   const handleAddReply = (postId: string, commentId: string) => {
     if (!currentUser) {
       setShowAuthModal(true);
@@ -540,60 +737,66 @@ export const FahadEntertainmentZone: React.FC = () => {
     gameSound.playBounce();
   };
 
-  // Share Post Action
   const handleSharePost = (postId: string) => {
-    showToast('🔗 পোস্টের লিংক কপি করা হয়েছে! বন্ধুদের সাথে শেয়ার করুন।');
+    showToast('🔗 পোস্ট লিঙ্ক কপি করা হয়েছে! সোশ্যাল মিডিয়ায় শেয়ার করুন।');
     gameSound.playBounce();
   };
 
-  // Open Public User Profile
-  const handleOpenPublicProfile = (userObj: { id: string; name: string; avatar: string; identifier?: string }) => {
-    // Find full user in db or construct fallback
+  const handleOpenPublicProfile = (userObj: { id: string; name: string; avatar: string }) => {
     const fullUser = usersDb.find(u => u.id === userObj.id) || {
       id: userObj.id,
       name: userObj.name,
-      identifier: userObj.identifier || 'সম্মানিত মেম্বার',
+      email: '', 
+      phone: '', 
       password: '',
       avatar: userObj.avatar,
-      bio: 'NEXUS সোশ্যাল নেটওয়ার্কের নিবন্ধিত মেম্বার।',
-      joinedAt: 'সক্রিয় সদস্য'
+      bio: 'NEXUS সোশ্যাল নেটওয়ার্কের সম্মানিত সদস্য।',
+      joinedAt: 'সক্রিয় সদস্য',
+      dob: '2005-01-01',
+      gender: 'অন্যান্য',
+      hometown: undefined,
+      school: undefined,
+      occupation: undefined
     };
 
     setViewingPublicUser(fullUser);
     gameSound.playBounce();
   };
 
-  const reactionConfigs = [
-    { type: 'like', label: '👍 লাইক' },
-    { type: 'love', label: '❤️ লাভ' },
-    { type: 'care', label: '🥰 কেয়ার' },
-    { type: 'haha', label: '😆 হাহা' },
-    { type: 'wow', label: '😮 ওয়াও' },
-    { type: 'sad', label: '😢 স্যাড' },
-    { type: 'fire', label: '🔥 ফায়ার' }
-  ];
-
   let displayPosts = posts;
   if (appActiveTab === 'myposts' && currentUser) {
     displayPosts = posts.filter(p => p.authorId === currentUser.id);
   }
+  if (postSearchQuery.trim()) {
+    const q = postSearchQuery.toLowerCase().trim();
+    displayPosts = displayPosts.filter(p => 
+      p.content.toLowerCase().includes(q) || 
+      p.authorName.toLowerCase().includes(q)
+    );
+  }
+
+  const filteredUsers = usersDb.filter(u => {
+    if (!userSearchQuery.trim()) return true;
+    const q = userSearchQuery.toLowerCase().trim();
+    return u.name.toLowerCase().includes(q) || (u.bio && u.bio.toLowerCase().includes(q));
+  });
 
   return (
-    <section id="nexus-portal" className="mt-16 mb-16 scroll-mt-24">
-      {/* TOAST FLOATING ALERT */}
+    <section id="nexus-portal" className="mt-28 md:mt-32 pb-20 scroll-mt-24">
+      {/* TOAST POPUP */}
       {toastText && (
-        <div className="fixed top-20 right-4 z-50 bg-[#0c1328] border border-cyan-400 text-cyan-200 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-bold animate-bounce-subtle flex items-center gap-2">
+        <div className="fixed top-24 right-4 z-50 bg-[#0c1328] border border-cyan-400 text-cyan-200 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-bold animate-bounce-subtle flex items-center gap-2 animate-fade-in">
           <Sparkles size={16} className="text-amber-400" />
           <span>{toastText}</span>
         </div>
       )}
 
-      {/* HIDDEN FILE INPUTS */}
+      {/* GALLERY FILE SELECTORS */}
       <input type="file" accept="image/*" ref={postImageFileRef} onChange={handlePostImageSelect} className="hidden" />
       <input type="file" accept="image/*" ref={avatarFileRef} onChange={handleAvatarSelect} className="hidden" />
 
-      {/* NEXUS SECTION PORTAL CARD */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#0a0f24] via-[#070b1a] to-[#0e162f] border border-cyan-500/40 shadow-2xl space-y-4 relative overflow-hidden">
+      {/* NEXUS SECTION CARD */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#0a0f24] via-[#070b1a] to-[#0e162f] border border-cyan-500/40 shadow-2xl space-y-4 relative overflow-hidden transition-all duration-500 hover:scale-[1.002] hover:border-cyan-500/60 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-cyan-500/30 border border-white/20 shrink-0">
@@ -617,7 +820,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                 </span>
               </h2>
               <p className="text-xs text-gray-400 mt-0.5">
-                ইমেইল বা ফোন দিয়ে যুক্ত হোন, ছবিসহ পোস্ট করুন, লাইক-কেয়ার রিঅ্যাক্ট দিন এবং কমেন্টে সরাসরি রিপ্লাই দিন!
+                নিরাপদ অ্যাকাউন্ট খুলুন, বায়োডাটা (স্কুল, পেশা, প্লেস) যোগ করুন ও চিরস্থায়ী রিয়েল পোস্ট শেয়ার করুন!
               </p>
             </div>
           </div>
@@ -631,7 +834,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                     setAuthTab('login');
                     setStatusMsg(null);
                   }}
-                  className="px-3.5 py-2 rounded-2xl bg-slate-900 border border-slate-700 hover:border-cyan-500 text-xs font-bold text-gray-200 hover:text-white transition cursor-pointer shadow-sm"
+                  className="px-4 py-2 rounded-2xl bg-slate-900 border border-slate-700 hover:border-cyan-500 text-xs font-bold text-gray-200 hover:text-white transition cursor-pointer shadow-sm"
                 >
                   লগইন
                 </button>
@@ -645,7 +848,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                   className="px-4 py-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
                   <UserCheck size={14} />
-                  <span>নতুন অ্যাকাউন্ট</span>
+                  <span>নতুন অ্যাকাউন্ট তৈরি</span>
                 </button>
               </>
             ) : (
@@ -670,47 +873,23 @@ export const FahadEntertainmentZone: React.FC = () => {
             </button>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
-          <div className="p-3 rounded-2xl bg-[#040711] border border-slate-800 flex items-center gap-2.5">
-            <Users size={18} className="text-cyan-400 shrink-0" />
-            <div>
-              <span className="text-[10px] text-gray-400 block font-bold">মোট সদস্য</span>
-              <span className="text-sm font-black text-white">{usersDb.length + 15} Members</span>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-[#040711] border border-slate-800 flex items-center gap-2.5">
-            <Globe size={18} className="text-emerald-400 shrink-0" />
-            <div>
-              <span className="text-[10px] text-gray-400 block font-bold">স্থায়ী পোস্টসমূহ</span>
-              <span className="text-sm font-black text-white">{posts.length} Posts</span>
-            </div>
-          </div>
-
-          <div className="col-span-2 sm:col-span-1 p-3 rounded-2xl bg-[#040711] border border-slate-800 flex items-center gap-2.5">
-            <ShieldCheck size={18} className="text-amber-400 shrink-0" />
-            <div>
-              <span className="text-[10px] text-gray-400 block font-bold">অ্যাকাউন্ট অপশন</span>
-              <span className="text-xs font-black text-emerald-400">ইমেইল / মোবাইল ভেরিফাইড</span>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* DEDICATED FULL-SCREEN WORKSPACE / PAGE VIEW */}
+      {/* FULL NEXUS APP WORKSPACE VIEW */}
       {isAppOpen && (
         <div className="fixed inset-0 z-50 bg-[#050812] overflow-y-auto flex flex-col">
+          {/* Workspace Header */}
           <div className="sticky top-0 z-40 bg-[#080d1e]/95 backdrop-blur-md border-b border-cyan-500/30 px-4 py-3 flex items-center justify-between gap-3 shadow-2xl">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-xs shadow">
                 NX
               </div>
               <h2 className="text-base font-black text-white uppercase tracking-wider hidden sm:block">
-                NEXUS Workspace
+                NEXUS App Workspace
               </h2>
             </div>
 
+            {/* Navigation Tabs */}
             <div className="flex items-center gap-1.5 bg-[#040711] p-1 rounded-2xl border border-slate-800">
               <button
                 onClick={() => {
@@ -754,6 +933,7 @@ export const FahadEntertainmentZone: React.FC = () => {
               </button>
             </div>
 
+            {/* Exit App Button */}
             <button
               onClick={() => setIsAppOpen(false)}
               className="px-3.5 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
@@ -763,8 +943,35 @@ export const FahadEntertainmentZone: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 space-y-6">
+          <div className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6 space-y-6">
             
+            {/* Live Counters displayed prominently inside the App Workspace */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-2xl bg-[#090d1a] border border-cyan-500/20 shadow-lg flex items-center gap-3">
+                <Users size={20} className="text-cyan-400 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">নিবন্ধিত মেম্বার</span>
+                  <span className="text-sm font-black text-white">{usersDb.length} Members</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#090d1a] border border-emerald-500/20 shadow-lg flex items-center gap-3">
+                <Globe size={20} className="text-emerald-400 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">স্থায়ী পোস্ট সংখ্যা</span>
+                  <span className="text-sm font-black text-white">{posts.length} Posts</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#090d1a] border border-amber-500/20 shadow-lg flex items-center gap-3">
+                <ShieldCheck size={20} className="text-amber-400 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">প্রোফাইল বায়োডাটা</span>
+                  <span className="text-xs font-black text-amber-400 font-mono">কাস্টমাইজ কাস্টম সক্রিয়</span>
+                </div>
+              </div>
+            </div>
+
             {/* POST COMPOSER */}
             <div className="p-4 sm:p-5 rounded-3xl bg-[#090d1a] border border-slate-800 shadow-2xl space-y-3">
               <form onSubmit={handleCreatePost} className="space-y-3">
@@ -781,8 +988,8 @@ export const FahadEntertainmentZone: React.FC = () => {
                     onChange={(e) => setPostContent(e.target.value)}
                     placeholder={
                       currentUser 
-                        ? `${currentUser.name}, আপনার অ্যাকাউন্টে যা ইচ্ছে পোস্ট করুন...` 
-                        : 'পোস্ট করতে ইমেইল/ফোন দিয়ে অ্যাকাউন্ট খুলুন বা লগইন করুন...'
+                        ? `${currentUser.name}, আপনার মনে কী আছে? ছবিসহ স্থায়ী পোস্ট করুন...` 
+                        : 'পোস্ট করতে অনুগ্রহ করে লগইন করুন...'
                     }
                     className="flex-1 px-4 py-2.5 rounded-2xl bg-[#040711] border border-slate-800 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition"
                   />
@@ -817,7 +1024,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                     className="px-6 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
                     <Send size={13} />
-                    <span>পোস্ট প্রকাশ করুন</span>
+                    <span>পোস্ট করুন</span>
                   </button>
                 </div>
               </form>
@@ -826,36 +1033,88 @@ export const FahadEntertainmentZone: React.FC = () => {
             {/* TAB: USERS DIRECTORY */}
             {appActiveTab === 'users' && (
               <div className="space-y-4">
-                <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
-                  <Users size={16} className="text-cyan-400" />
-                  <span>সকল নিবন্ধিত ইউজার প্রোফাইল:</span>
-                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
+                    <Users size={16} className="text-cyan-400" />
+                    <span>সকল নিবন্ধিত ব্যবহারকারী ডিরেক্টরি ({usersDb.length}):</span>
+                  </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {usersDb.map((u) => (
-                    <div 
-                      key={u.id}
-                      onClick={() => handleOpenPublicProfile(u)}
-                      className="p-3.5 rounded-2xl bg-[#090d1a] border border-slate-800 hover:border-cyan-500 transition cursor-pointer flex items-center gap-3 group"
-                    >
-                      <img src={u.avatar} alt={u.name} className="w-11 h-11 rounded-full object-cover border border-cyan-400 shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-extrabold text-xs text-white group-hover:text-cyan-400 transition truncate">{u.name}</h4>
-                        <p className="text-[10px] text-gray-400 font-mono truncate">{u.identifier}</p>
-                        <span className="text-[9px] text-cyan-400 font-bold block mt-1">প্রোফাইল ও পোস্টসমূহ দেখতে ক্লিক করুন ➔</span>
-                      </div>
-                    </div>
-                  ))}
+                  {/* Search Bar for Members */}
+                  <div className="relative w-full sm:w-64">
+                    <input
+                      type="text"
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      placeholder="🔍 মেম্বারদের নাম লিখে খুঁজুন..."
+                      className="w-full px-4 py-2 rounded-2xl bg-[#090d1a] border border-slate-800 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition shadow"
+                    />
+                    {userSearchQuery && (
+                      <button
+                        onClick={() => setUserSearchQuery('')}
+                        className="absolute right-3 top-2 text-gray-500 hover:text-white cursor-pointer text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {usersDb.length === 0 ? (
+                  <div className="p-8 rounded-3xl bg-[#090d1a] border border-slate-800 text-center text-xs text-gray-400">
+                    এখনও কোনো ব্যবহারকারী নিবন্ধিত হয়নি।
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="p-8 rounded-3xl bg-[#090d1a] border border-slate-800 text-center text-xs text-gray-400">
+                    "<strong>{userSearchQuery}</strong>" নামে কোনো মেম্বার খুঁজে পাওয়া যায়নি!
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {filteredUsers.map((u) => (
+                      <div 
+                        key={u.id}
+                        onClick={() => handleOpenPublicProfile(u)}
+                        className="p-3.5 rounded-2xl bg-[#090d1a] border border-slate-800 hover:border-cyan-500 transition cursor-pointer flex items-center gap-3 group animate-fade-in"
+                      >
+                        <img src={u.avatar} alt={u.name} className="w-11 h-11 rounded-full object-cover border-cyan-400 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-extrabold text-xs text-white group-hover:text-cyan-400 transition truncate">{u.name}</h4>
+                          <div className="text-[10px] text-gray-400 space-y-0.5 mt-0.5">
+                            <p className="font-semibold text-gray-400">বয়স: {calculateAge(u.dob)} বছর ({u.gender === 'male' ? 'পুরুষ' : 'মহিলা'})</p>
+                            {u.hometown && <p className="truncate flex items-center gap-1 text-[9px] text-gray-500"><MapPin size={10} /> {u.hometown}</p>}
+                          </div>
+                          <span className="text-[9px] text-cyan-400 font-bold block mt-1">প্রোফাইল ও পোস্টসমূহ দেখুন ➔</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* TAB: POSTS TIMELINE */}
+            {/* TAB: TIMELINE */}
             {appActiveTab !== 'users' && (
               <div className="space-y-4">
+                {/* Search Bar for Posts */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={postSearchQuery}
+                    onChange={(e) => setPostSearchQuery(e.target.value)}
+                    placeholder="🔍 পোস্টের বিষয়বস্তু অথবা লেখকের নাম লিখে পোস্ট সার্চ করুন..."
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[#090d1a] border border-slate-800 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition shadow"
+                  />
+                  {postSearchQuery && (
+                    <button
+                      onClick={() => setPostSearchQuery('')}
+                      className="absolute right-3 top-2.5 text-gray-500 hover:text-white cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
                 {displayPosts.length === 0 ? (
                   <div className="p-8 rounded-3xl bg-[#090d1a] border border-slate-800 text-center space-y-2">
-                    <p className="text-xs text-gray-400">কোনো পোস্ট পাওয়া যায়নি। প্রথম পোস্টটি শেয়ার করুন!</p>
+                    <p className="text-xs text-gray-400">টাইমলাইনে কোনো পোস্ট নেই। প্রথম রিয়েল পোস্টটি প্রকাশ করুন!</p>
                   </div>
                 ) : (
                   displayPosts.map((post) => {
@@ -864,7 +1123,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                     const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0);
 
                     return (
-                      <div key={post.id} className="p-4 sm:p-5 rounded-3xl bg-[#090d1a] border border-slate-800 shadow-2xl space-y-3.5 relative overflow-hidden">
+                      <div key={post.id} className="p-4 sm:p-5 rounded-3xl bg-[#090d1a] border border-slate-800 shadow-2xl space-y-3.5 relative overflow-hidden animate-fade-in">
                         {/* Post Header */}
                         <div className="flex items-center justify-between gap-2">
                           <div 
@@ -881,12 +1140,11 @@ export const FahadEntertainmentZone: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Delete Post Button with Confirmation Modal Trigger */}
+                          {/* Delete */}
                           {isMyPost && (
                             <button
                               onClick={() => setDeleteConfirmPostId(post.id)}
                               className="p-1.5 rounded-xl bg-red-950/60 hover:bg-red-600 text-red-400 hover:text-white transition cursor-pointer"
-                              title="পোস্টটি মুছুন"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -914,7 +1172,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Reaction Bar */}
+                        {/* Actions */}
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 relative text-xs font-bold text-gray-300">
                           <div className="relative">
                             <button
@@ -927,7 +1185,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                               <span>
                                 {userReaction === 'like' && '👍 লাইক'}
                                 {userReaction === 'love' && '❤️ লাভ'}
-                                {userReaction === 'care' && '🥰 কেয়ার'}
+                                {userReaction === 'care' && '🥰 কেয়ার'}
                                 {userReaction === 'haha' && '😆 হাহা'}
                                 {userReaction === 'wow' && '😮 ওয়াও'}
                                 {userReaction === 'sad' && '😢 স্যাড'}
@@ -966,7 +1224,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                           </button>
                         </div>
 
-                        {/* COMMENTS & REPLIES SECTION */}
+                        {/* Comments & Replies */}
                         <div className="pt-2 space-y-2.5 border-t border-slate-800/40">
                           {post.comments.length > 0 && (
                             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
@@ -994,7 +1252,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                                         </div>
                                         <p className="text-xs text-gray-200 mt-0.5">{comment.text}</p>
 
-                                        {/* COMMENT LIKE & REPLY BUTTONS */}
+                                        {/* Actions */}
                                         <div className="flex items-center gap-4 mt-2 text-[11px] font-bold">
                                           <button
                                             onClick={() => handleLikeComment(post.id, comment.id)}
@@ -1017,7 +1275,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                                       </div>
                                     </div>
 
-                                    {/* NESTED REPLIES LIST */}
+                                    {/* Replies List */}
                                     {comment.replies && comment.replies.length > 0 && (
                                       <div className="ml-8 pl-3 border-l-2 border-slate-800 space-y-2 pt-1">
                                         {comment.replies.map((reply) => (
@@ -1035,9 +1293,9 @@ export const FahadEntertainmentZone: React.FC = () => {
                                       </div>
                                     )}
 
-                                    {/* NESTED REPLY INPUT FIELD */}
+                                    {/* Reply Form */}
                                     {activeReplyInputId === comment.id && (
-                                      <div className="ml-8 pt-1 flex items-center gap-2 animate-fade-in">
+                                      <div className="ml-8 pt-1 flex items-center gap-2">
                                         <input
                                           type="text"
                                           value={replyInputs[comment.id] || ''}
@@ -1048,7 +1306,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                                               handleAddReply(post.id, comment.id);
                                             }
                                           }}
-                                          placeholder={`${comment.authorName}-কে উত্তর লিখুন...`}
+                                          placeholder="উত্তর লিখুন..."
                                           className="flex-1 px-3 py-1.5 rounded-xl bg-[#080d1e] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
                                         />
                                         <button
@@ -1065,7 +1323,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Add Comment Input */}
+                          {/* Comment input */}
                           <div className="flex items-center gap-2 pt-1">
                             <input
                               type="text"
@@ -1077,7 +1335,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                                   handleAddComment(post.id);
                                 }
                               }}
-                              placeholder="কমেন্ট করুন (Enter চাপুন)..."
+                              placeholder="মন্তব্য করুন..."
                               className="flex-1 px-3.5 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
                             />
                             <button
@@ -1098,25 +1356,23 @@ export const FahadEntertainmentZone: React.FC = () => {
         </div>
       )}
 
-      {/* CONFIRM DELETE POST MODAL */}
+      {/* CONFIRM DELETE MODAL */}
       {deleteConfirmPostId && (
         <div 
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
           onClick={() => setDeleteConfirmPostId(null)}
         >
           <div 
-            className="w-full max-w-sm bg-[#0c1220] border border-red-500/50 rounded-3xl p-6 shadow-2xl text-center space-y-4 my-auto"
+            className="w-full max-w-sm bg-[#0c1220] border border-red-500/50 rounded-3xl p-6 shadow-2xl text-center space-y-4 my-auto animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-12 h-12 rounded-2xl bg-red-950 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto shadow-lg animate-bounce-subtle">
+            <div className="w-12 h-12 rounded-2xl bg-red-950 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto shadow-lg">
               <AlertTriangle size={26} />
             </div>
 
             <div>
-              <h3 className="font-extrabold text-base text-white">
-                পোস্ট মুছে ফেলার নিশ্চিতকরণ
-              </h3>
-              <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+              <h3 className="font-extrabold text-base text-white">পোস্ট মুছে ফেলার নিশ্চিতকরণ</h3>
+              <p className="text-xs text-gray-300 mt-1">
                 Are you sure you want to delete this post?<br />
                 আপনি কি নিশ্চিত যে এই পোস্টটি মুছে ফেলতে চান?
               </p>
@@ -1125,14 +1381,14 @@ export const FahadEntertainmentZone: React.FC = () => {
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 onClick={() => setDeleteConfirmPostId(null)}
-                className="px-5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-gray-300 hover:text-white font-bold text-xs cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-gray-300 font-bold text-xs cursor-pointer"
               >
                 বাতিল করুন
               </button>
 
               <button
                 onClick={handleConfirmDeletePost}
-                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs cursor-pointer shadow-lg shadow-red-600/30"
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs cursor-pointer shadow-lg"
               >
                 হ্যাঁ, মুছে ফেলুন
               </button>
@@ -1141,20 +1397,20 @@ export const FahadEntertainmentZone: React.FC = () => {
         </div>
       )}
 
-      {/* PUBLIC USER PROFILE VIEW MODAL */}
+      {/* PUBLIC USER PROFILE DIALOG */}
       {viewingPublicUser && (
         <div 
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
           onClick={() => setViewingPublicUser(null)}
         >
           <div 
-            className="w-full max-w-lg bg-[#0c1220] border border-cyan-500/50 rounded-3xl p-6 shadow-2xl relative text-left my-auto space-y-4"
+            className="w-full max-w-lg bg-[#0c1220] border border-cyan-500/50 rounded-3xl p-6 shadow-2xl relative text-left my-auto space-y-4 animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
               <h3 className="font-extrabold text-base text-white flex items-center gap-2">
                 <User size={18} className="text-cyan-400" />
-                <span>ইউজার প্রোফাইল তথ্য</span>
+                <span>NEXUS ইউজার প্রোফাইল তথ্য</span>
               </h3>
               <button
                 onClick={() => setViewingPublicUser(null)}
@@ -1164,27 +1420,62 @@ export const FahadEntertainmentZone: React.FC = () => {
               </button>
             </div>
 
-            {/* Profile Info Card */}
             <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#040711] border border-slate-800">
-              <img src={viewingPublicUser.avatar} alt={viewingPublicUser.name} className="w-16 h-16 rounded-full object-cover border-2 border-cyan-400 shrink-0" />
-              <div className="min-w-0 flex-1">
+              <img src={viewingPublicUser.avatar} alt={viewingPublicUser.name} className="w-16 h-16 rounded-full object-cover border-2 border-cyan-400 shrink-0 shadow-lg" />
+              <div className="min-w-0 flex-1 space-y-2">
                 <h4 className="font-extrabold text-base text-white flex items-center gap-1.5">
                   <span>{viewingPublicUser.name}</span>
-                  <CheckCircle size={14} className="text-cyan-400 fill-cyan-500/20" />
+                  <CheckCircle size={14} className="text-cyan-400" />
                 </h4>
-                <p className="text-xs text-gray-400 font-mono">{viewingPublicUser.identifier}</p>
-                <p className="text-xs text-gray-300 mt-1 italic font-normal">"{viewingPublicUser.bio}"</p>
-                <span className="text-[10px] text-cyan-400 font-mono block mt-1">যোগদানের সময়: {viewingPublicUser.joinedAt}</span>
+                
+                <div className="space-y-1.5 text-xs text-gray-300">
+                  <p className="font-semibold text-emerald-400 block text-[11px]">🛡️ NEXUS ভেরিফাইড প্রোফাইল</p>
+                  <p className="font-normal text-gray-300 italic">"{viewingPublicUser.bio || 'কোনো বায়ো নেই'}"</p>
+                  
+                  <div className="flex flex-wrap gap-2 pt-1 font-semibold text-[10px] text-gray-400">
+                    <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800">বয়স: {calculateAge(viewingPublicUser.dob)} বছর</span>
+                    <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 uppercase">জেন্ডার: {viewingPublicUser.gender === 'male' ? 'পুরুষ' : 'মহিলা'}</span>
+                    <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800">নিবন্ধিত: {viewingPublicUser.joinedAt}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* User Posts Count */}
+            {/* Optional Biodata Fields (Hometown, School, Occupation) */}
+            {(viewingPublicUser.hometown || viewingPublicUser.school || viewingPublicUser.occupation) && (
+              <div className="p-3.5 rounded-2xl bg-[#040711] border border-slate-800/80 space-y-2.5 text-xs text-gray-200">
+                <h4 className="font-black text-cyan-400 border-b border-slate-800 pb-1.5">ব্যক্তিগত পরিচিতি (Biodata):</h4>
+                
+                {viewingPublicUser.hometown && (
+                  <p className="flex items-center gap-2">
+                    <MapPin size={14} className="text-orange-400 shrink-0" />
+                    <span>কোথা থেকে এসেছে: <strong className="text-white">{viewingPublicUser.hometown}</strong></span>
+                  </p>
+                )}
+
+                {viewingPublicUser.school && (
+                  <p className="flex items-center gap-2">
+                    <GraduationCap size={14} className="text-indigo-400 shrink-0" />
+                    <span>শিক্ষাপ্রতিষ্ঠান: <strong className="text-white">{viewingPublicUser.school}</strong></span>
+                  </p>
+                )}
+
+                {viewingPublicUser.occupation && (
+                  <p className="flex items-center gap-2">
+                    <Briefcase size={14} className="text-emerald-400 shrink-0" />
+                    <span>বর্তমান পেশা/কাজ: <strong className="text-white">{viewingPublicUser.occupation}</strong></span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Public Posts Section */}
             <div>
               <h4 className="font-extrabold text-xs text-gray-300 mb-2">
-                {viewingPublicUser.name} এর সকল প্রকাশিত পোস্টসমূহ ({posts.filter(p => p.authorId === viewingPublicUser.id).length}):
+                {viewingPublicUser.name} এর শেয়ারকৃত পোস্টসমূহ ({posts.filter(p => p.authorId === viewingPublicUser.id).length}):
               </h4>
 
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-[200px] overflow-y-auto pr-1">
                 {posts.filter(p => p.authorId === viewingPublicUser.id).length === 0 ? (
                   <p className="text-xs text-gray-500 italic p-3 text-center bg-[#040711] rounded-xl">
                     এই ইউজার এখনও কোনো পোস্ট প্রকাশ করেননি।
@@ -1224,11 +1515,11 @@ export const FahadEntertainmentZone: React.FC = () => {
                 <div>
                   <h3 className="font-extrabold text-base text-white uppercase tracking-wider">
                     {authTab === 'login' && 'NEXUS অ্যাকাউন্ট লগইন'}
-                    {authTab === 'signup' && 'NEXUS নতুন অ্যাকাউন্ট খুলুন'}
-                    {authTab === 'reset' && 'পাসওয়ার্ড রিসেট করুন'}
+                    {authTab === 'signup' && 'NEXUS নতুন অ্যাকাউন্ট'}
+                    {authTab === 'reset' && 'পাসওয়ার্ড রিসেট'}
                   </h3>
                   <p className="text-[11px] text-gray-400">
-                    ইমেইল আইডি বা মোবাইল নম্বর ব্যবহার করে অ্যাকাউন্ট সুবিধা
+                    ইমেইল আইডি বা মোবাইল নম্বর ভেরিফাইড সিস্টেমে প্রবেশ করুন
                   </p>
                 </div>
               </div>
@@ -1253,12 +1544,12 @@ export const FahadEntertainmentZone: React.FC = () => {
             {authTab === 'login' && (
               <form onSubmit={handleLogin} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1">ইমেইল আইডি বা মোবাইল নম্বর:</label>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">নিবন্ধিত ইমেইল বা মোবাইল নম্বর:</label>
                   <input
                     type="text"
                     required
-                    value={formIdentifier}
-                    onChange={(e) => setFormIdentifier(e.target.value)}
+                    value={loginEmailOrPhone}
+                    onChange={(e) => setLoginEmailOrPhone(e.target.value)}
                     placeholder="user@gmail.com বা 017xxxxxxxx"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
                   />
@@ -1269,11 +1560,23 @@ export const FahadEntertainmentZone: React.FC = () => {
                   <input
                     type="password"
                     required
-                    value={formPassword}
-                    onChange={(e) => setFormPassword(e.target.value)}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••••••••"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
                   />
+                </div>
+
+                <div className="flex items-center justify-between text-xs pb-1">
+                  <label className="flex items-center gap-2 text-gray-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded bg-[#040711] border-slate-800 accent-cyan-500"
+                    />
+                    <span>লগইন তথ্য সেভ রাখুন (Auto-Save)</span>
+                  </label>
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
@@ -1310,9 +1613,9 @@ export const FahadEntertainmentZone: React.FC = () => {
               </form>
             )}
 
-            {/* SIGNUP FORM */}
+            {/* SIGNUP FORM WITH SIMPLIFIED UNIFIED IDENTIFIER (EITHER EMAIL OR MOBILE) */}
             {authTab === 'signup' && (
-              <form onSubmit={handleSignup} className="space-y-3">
+              <form onSubmit={handleSignup} className="space-y-3.5">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">পূর্ণ নাম (Full Name):</label>
                   <input
@@ -1320,19 +1623,19 @@ export const FahadEntertainmentZone: React.FC = () => {
                     required
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    placeholder="যেমন: ফাহাদ আহমেদ"
+                    placeholder="কমপক্ষে ৩ অক্ষর"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1">ইমেইল আইডি বা মোবাইল নম্বর:</label>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">ইমেইল অথবা মোবাইল নম্বর (যেকোনো একটি):</label>
                   <input
                     type="text"
                     required
                     value={formIdentifier}
                     onChange={(e) => setFormIdentifier(e.target.value)}
-                    placeholder="user@gmail.com বা 017xxxxxxxx"
+                    placeholder="যেমন: name@gmail.com অথবা 017xxxxxxxx"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
@@ -1351,9 +1654,10 @@ export const FahadEntertainmentZone: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-300 mb-1">জন্ম তারিখ:</label>
+                    <label className="block text-[11px] font-bold text-gray-300 mb-1">জন্ম তারিখ (Age 13+):</label>
                     <input
                       type="date"
+                      required
                       value={formDob}
                       onChange={(e) => setFormDob(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
@@ -1373,18 +1677,16 @@ export const FahadEntertainmentZone: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1">প্রোফাইল পিকচার (গ্যালারি থেকে যোগ করুন):</label>
-                  <div className="flex items-center gap-3">
-                    <img src={formAvatar} alt="Preview" className="w-10 h-10 rounded-full object-cover border border-cyan-400" />
-                    <button
-                      type="button"
-                      onClick={() => avatarFileRef.current?.click()}
-                      className="px-3.5 py-1.5 rounded-xl bg-[#040711] border border-slate-800 hover:border-cyan-500 text-xs text-cyan-300 font-bold transition cursor-pointer"
-                    >
-                      গ্যালারি থেকে ছবি সিলেক্ট করুন
-                    </button>
-                  </div>
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <label className="flex items-center gap-2 text-gray-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded bg-[#040711] border-slate-800 accent-cyan-500"
+                    />
+                    <span>লগইন তথ্য সেভ রাখুন (Auto-Save)</span>
+                  </label>
                 </div>
 
                 <div className="pt-2 flex items-center justify-between">
@@ -1403,7 +1705,7 @@ export const FahadEntertainmentZone: React.FC = () => {
                     type="submit"
                     className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 cursor-pointer active:scale-95"
                   >
-                    রেজিস্ট্রেশন সম্পূর্ণ করুন
+                    রেজিস্ট্রেশন করুন
                   </button>
                 </div>
               </form>
@@ -1414,12 +1716,12 @@ export const FahadEntertainmentZone: React.FC = () => {
               <form onSubmit={handleResetPassword} className="space-y-3.5">
                 {resetStep === 'identifier' && (
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1">আপনার নিবন্ধিত ইমেইল বা ফোন নম্বর দিন:</label>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">নিবন্ধিত ইমেইল বা ফোন নম্বর দিন:</label>
                     <input
                       type="text"
                       required
-                      value={formIdentifier}
-                      onChange={(e) => setFormIdentifier(e.target.value)}
+                      value={resetEmailOrPhone}
+                      onChange={(e) => setResetEmailOrPhone(e.target.value)}
                       placeholder="user@gmail.com বা 017xxxxxxxx"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
                     />
@@ -1428,7 +1730,7 @@ export const FahadEntertainmentZone: React.FC = () => {
 
                 {resetStep === 'code' && (
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1">৪ ডিজিট ভেরিফিকেশন কোড লিখুন (কোড: 2026):</label>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">৪ ডিজিট কোড লিখুন (কোড: 2026):</label>
                     <input
                       type="text"
                       required
@@ -1495,7 +1797,7 @@ export const FahadEntertainmentZone: React.FC = () => {
             <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
               <h3 className="font-extrabold text-base text-white flex items-center gap-2">
                 <User size={18} className="text-cyan-400" />
-                <span>আমার NEXUS প্রোফাইল</span>
+                <span>আমার NEXUS প্রোফাইল (ব্যক্তিগত তথ্য)</span>
               </h3>
               <button
                 onClick={() => setShowProfileModal(false)}
@@ -1505,7 +1807,7 @@ export const FahadEntertainmentZone: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
               <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#040711] border border-slate-800">
                 <div className="relative">
                   <img src={currentUser.avatar} alt={currentUser.name} className="w-14 h-14 rounded-full object-cover border-2 border-cyan-400" />
@@ -1518,14 +1820,20 @@ export const FahadEntertainmentZone: React.FC = () => {
                   </button>
                 </div>
 
-                <div>
+                <div className="min-w-0 flex-1">
                   <h4 className="font-extrabold text-sm text-white">{currentUser.name}</h4>
-                  <p className="text-xs text-gray-400">{currentUser.identifier}</p>
-                  <p className="text-[10px] text-cyan-400 font-mono mt-0.5">যোগদান: {currentUser.joinedAt}</p>
+                  <div className="text-[11px] text-gray-400 font-mono mt-0.5 space-y-0.5">
+                    {currentUser.email && <p className="text-cyan-300">📧 ইমেইল: {currentUser.email}</p>}
+                    {currentUser.phone && <p className="text-cyan-300">📞 ফোন: {currentUser.phone}</p>}
+                    <p className="text-emerald-400 font-bold">🔑 পাসওয়ার্ড: {currentUser.password}</p>
+                    <p>🎂 বয়স: {calculateAge(currentUser.dob)} বছর (জন্ম: {currentUser.dob})</p>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">যোগদান: {currentUser.joinedAt}</p>
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* Bio Edit */}
+              <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-gray-300">বায়ো পরিবর্তন করুন:</label>
                 <input
                   type="text"
@@ -1539,7 +1847,55 @@ export const FahadEntertainmentZone: React.FC = () => {
                 />
               </div>
 
-              <div className="pt-2 flex justify-between items-center">
+              {/* Hometown Edit */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-300">কোথা থেকে এসেছেন (Hometown):</label>
+                <input
+                  type="text"
+                  value={currentUser.hometown || ''}
+                  onChange={(e) => {
+                    const updated = { ...currentUser, hometown: e.target.value };
+                    setCurrentUser(updated);
+                    setUsersDb(usersDb.map(u => u.id === currentUser.id ? updated : u));
+                  }}
+                  placeholder="যেমন: ঢাকা, বাংলাদেশ"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              {/* School Edit */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-300">शिक्षাপ্রতিষ্ঠান (School/College):</label>
+                <input
+                  type="text"
+                  value={currentUser.school || ''}
+                  onChange={(e) => {
+                    const updated = { ...currentUser, school: e.target.value };
+                    setCurrentUser(updated);
+                    setUsersDb(usersDb.map(u => u.id === currentUser.id ? updated : u));
+                  }}
+                  placeholder="যেমন: সরকারি কলেজ"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              {/* Occupation Edit */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-300">বর্তমান পেশা (Occupation):</label>
+                <input
+                  type="text"
+                  value={currentUser.occupation || ''}
+                  onChange={(e) => {
+                    const updated = { ...currentUser, occupation: e.target.value };
+                    setCurrentUser(updated);
+                    setUsersDb(usersDb.map(u => u.id === currentUser.id ? updated : u));
+                  }}
+                  placeholder="যেমন: ছাত্র, গ্রাফিক ডিজাইনার"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-between items-center border-t border-slate-800">
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 rounded-xl bg-red-950/80 hover:bg-red-600 text-red-300 hover:text-white font-extrabold text-xs transition border border-red-500/30 cursor-pointer"

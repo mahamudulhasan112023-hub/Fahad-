@@ -35,7 +35,11 @@ import {
   Swords,
   Brain,
   Car,
-  Flame
+  Flame,
+  Home,
+  Users,
+  Bot,
+  Mail
 } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { CyberBladeNinja } from './components/games/CyberBladeNinja';
@@ -50,6 +54,9 @@ import { BlockBlast } from './components/games/BlockBlast';
 import { CyberJetFlight } from './components/games/CyberJetFlight';
 import { CommunityForum } from './components/CommunityForum';
 import { FahadEntertainmentZone } from './components/FahadEntertainmentZone';
+import { NexusAiAssistant } from './components/NexusAiAssistant';
+import { ContactSection } from './components/ContactSection';
+import { FooterSection } from './components/FooterSection';
 import { gameSound } from './utils/gameSound';
 
 interface VideoItem {
@@ -222,8 +229,25 @@ export default function App() {
     });
   };
 
-  // Smart Device Mode Switcher: 'auto' | 'phone' | 'laptop' | 'pc'
-  const [deviceMode, setDeviceMode] = useState<'auto' | 'phone' | 'laptop' | 'pc'>('auto');
+  // Active Nav and Smart Scroll Hide/Show Navbar States
+  const [activeNav, setActiveNav] = useState('hero');
+  const [showNavbar, setShowNavbar] = useState(true);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollYRef.current && currentScrollY > 70) {
+        setShowNavbar(false); // scrolling down -> hide
+      } else {
+        setShowNavbar(true); // scrolling up -> show
+      }
+      lastScrollYRef.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const toggleGameSound = () => {
     const next = !gameSoundEnabled;
@@ -375,6 +399,33 @@ export default function App() {
     isDraggingRef.current = false;
   };
 
+  // Google OAuth hash response handler
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token=")) {
+      const params = new URLSearchParams(hash.replace("#", "?"));
+      const token = params.get("access_token");
+      if (token) {
+        window.history.replaceState(null, "", window.location.pathname);
+        fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(googleUser => {
+          if (googleUser && googleUser.email) {
+            if (window.opener) {
+              window.opener.postMessage({ type: "GOOGLE_LOGIN_SUCCESS", googleUser }, window.location.origin);
+              window.close();
+            } else {
+              window.dispatchEvent(new CustomEvent("google-login-success", { detail: googleUser }));
+            }
+          }
+        })
+        .catch(err => console.error("Google profile retrieval error:", err));
+      }
+    }
+  }, []);
+
   // Listen to YouTube postMessage events for accurate time & duration
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -499,86 +550,57 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white selection:bg-orange-500 selection:text-white">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-40 backdrop-blur-md bg-gray-950/90 px-4 py-3 md:px-6 md:py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+      {/* Navigation with Smart Scroll Hide/Show */}
+      <nav className={`sticky top-0 z-40 backdrop-blur-md bg-gray-950/90 px-4 py-3 md:px-6 md:py-4 transition-transform duration-300 ${
+        showNavbar ? 'translate-y-0' : '-translate-y-full'
+      }`}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <a href="#" className="text-xl md:text-2xl font-black tracking-wider text-white hover:text-orange-500 transition shrink-0">
             FAHAD<span className="text-orange-500">.</span>
           </a>
 
-          {/* Smart Device Mode Switcher (Phone, Laptop, PC) */}
-          <div className="flex items-center bg-slate-900/90 border border-slate-800 p-0.5 rounded-full text-xs">
-            <button
-              onClick={() => setDeviceMode(deviceMode === 'phone' ? 'auto' : 'phone')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-medium transition cursor-pointer ${
-                deviceMode === 'phone' ? 'bg-orange-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
-              }`}
-              title="ফোন মোড (Phone View)"
-            >
-              <Smartphone size={13} />
-              <span className="hidden sm:inline text-[11px]">Phone</span>
-            </button>
-            <button
-              onClick={() => setDeviceMode(deviceMode === 'laptop' ? 'auto' : 'laptop')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-medium transition cursor-pointer ${
-                deviceMode === 'laptop' ? 'bg-orange-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
-              }`}
-              title="ল্যাপটপ মোড (Laptop View)"
-            >
-              <Laptop size={13} />
-              <span className="hidden sm:inline text-[11px]">Laptop</span>
-            </button>
-            <button
-              onClick={() => setDeviceMode(deviceMode === 'pc' ? 'auto' : 'pc')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-medium transition cursor-pointer ${
-                deviceMode === 'pc' ? 'bg-orange-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
-              }`}
-              title="পিসি মোড (PC View)"
-            >
-              <Monitor size={13} />
-              <span className="hidden sm:inline text-[11px]">PC</span>
-            </button>
-          </div>
-          
-          <button className="md:hidden p-2 text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            <Menu />
-          </button>
-
-          <div className={`absolute top-full left-0 w-full bg-gray-950 p-4 md:static md:flex md:w-auto md:bg-transparent md:border-none md:p-0 gap-6 text-sm font-medium ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
+          {/* Centered Pill Container Navigation with Active Animation */}
+          <div className={`absolute top-full left-0 w-full bg-[#0a0f1c]/95 backdrop-blur-md p-4 md:static md:flex md:w-auto md:bg-[#0c1220]/90 md:border md:border-slate-800/80 md:rounded-full md:px-3 md:py-1.5 md:shadow-2xl items-center gap-1.5 text-sm font-medium ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
             {[
               { id: 'hero', label: 'Home' },
-              { id: 'cartoons', label: 'Cartoons' },
-              { id: 'songs', label: 'Songs' },
-              { id: 'movies', label: 'Movies' },
+              { id: 'content-tabs', label: 'Videos' },
               { id: 'games', label: 'Games' },
-              { id: 'forum', label: 'Community Group' }
-            ].map(item => (
-              <a 
-                key={item.id} 
-                href={`#${item.id}`} 
-                onClick={() => { 
-                  setIsMobileMenuOpen(false); 
-                  if (item.id !== 'hero' && item.id !== 'games' && item.id !== 'forum') setActiveSection(item.id as any); 
-                }} 
-                className="block py-2 text-gray-300 hover:text-orange-500 transition"
-              >
-                {item.label}
-              </a>
-            ))}
+              { id: 'nexus-social', label: 'Nexus' },
+              { id: 'sonexas-ai', label: 'Sonexas AI' },
+              { id: 'contact-portal', label: 'Contact Me' }
+            ].map(item => {
+              const isActive = activeNav === item.id;
+              return (
+                <a 
+                  key={item.id} 
+                  href={`#${item.id}`} 
+                  onClick={() => { 
+                    setIsMobileMenuOpen(false); 
+                    setActiveNav(item.id);
+                    gameSound.playScore();
+                  }} 
+                  className={`block md:inline-block py-2 md:py-1.5 px-3.5 rounded-full transition-all duration-300 text-xs md:text-sm font-bold ${
+                    isActive 
+                      ? 'bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 text-white shadow-lg shadow-orange-600/30 scale-105' 
+                      : 'text-gray-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button className="md:hidden p-2 text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <Menu />
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Main Content framed by Smart Device Mode */}
-      <div className={`transition-all duration-300 ${
-        deviceMode === 'phone' 
-          ? 'max-w-[420px] mx-auto shadow-2xl bg-gray-950 min-h-screen px-2' 
-          : deviceMode === 'laptop' 
-            ? 'max-w-5xl mx-auto px-4' 
-            : deviceMode === 'pc' 
-              ? 'max-w-7xl mx-auto px-6' 
-              : 'w-full'
-      }`}>
+      {/* Main Content */}
+      <div className="w-full">
 
       {/* Hero Section */}
       <header id="hero" className="max-w-6xl mx-auto px-4 md:px-6 py-10 md:py-16 flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-12">
@@ -766,17 +788,27 @@ export default function App() {
           </div>
         </section>
 
-        {/* Community & Forum Groups Section */}
-        <CommunityForum />
+        {/* Community & Forum Groups Section (Now Nexus Social Platform) */}
+        <div id="nexus-social">
+          <CommunityForum />
+        </div>
 
         {/* Fahad Entertainment Fan Zone & Lounge */}
         <FahadEntertainmentZone />
+
+        {/* NEXUS AI Solver & Assistant Section */}
+        <div id="nexus-ai">
+          <NexusAiAssistant />
+        </div>
+
+        {/* Dynamic Contact & Quick Mail Section */}
+        <div id="contact-portal">
+          <ContactSection />
+        </div>
       </main>
       
-      {/* Footer */}
-      <footer className="bg-gray-950/80 py-8 text-center text-xs md:text-sm text-gray-500">
-        <p>© 2026 Fahad Portfolio. All rights reserved.</p>
-      </footer>
+      {/* Mahamudul Hasan Professional Footer Section */}
+      <FooterSection />
       </div> {/* End of Smart Device Mode Viewport Container */}
       
       {/* Video Modal - 100% Fresh Pure Clean Video Player with No Names Displayed */}
@@ -1082,6 +1114,38 @@ export default function App() {
           </div>
         </div>
       )}
+      {/* Mobile Floating Bottom Navigation Bar (like the uploaded image) */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 md:hidden bg-[#0c1220]/95 backdrop-blur-md border border-slate-800/90 rounded-full px-2.5 py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex items-center gap-1 overflow-x-auto max-w-[95vw] scrollbar-none">
+        {[
+          { id: 'hero', label: 'Home', icon: Home },
+          { id: 'content-tabs', label: 'Videos', icon: Film },
+          { id: 'games', label: 'Games', icon: Gamepad2 },
+          { id: 'community-forum', label: 'Community', icon: Users },
+          { id: 'nexus-ai', label: 'Nexus', icon: Sparkles },
+          { id: 'contact-portal', label: 'Contact', icon: Mail }
+        ].map(item => {
+          const IconComponent = item.icon;
+          const isActive = activeNav === item.id;
+          return (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              onClick={() => {
+                setActiveNav(item.id);
+                gameSound.playScore();
+              }}
+              className={`flex flex-col items-center justify-center px-2.5 py-1 rounded-full transition-all duration-300 shrink-0 ${
+                isActive
+                  ? 'bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 text-white shadow-md shadow-orange-600/30 scale-105'
+                  : 'text-gray-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <IconComponent size={14} className={isActive ? 'text-white' : 'text-gray-400'} />
+              <span className="text-[9px] font-bold mt-0.5 whitespace-nowrap">{item.label}</span>
+            </a>
+          );
+        })}
+      </div>
     </div>
   );
 }
