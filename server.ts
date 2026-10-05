@@ -34,11 +34,13 @@ app.post("/api/gemini/solve-text", async (req, res) => {
 
     const response = await ai.models.generateContent({
       model: "gemini-3.8-flash",
-      contents: [prompt],
+      contents: prompt,
       config: {
         systemInstruction: "You are NEXUS AI, a brilliant, polite problem-solver assistant. CRITICAL: You must always start every response with the Islamic greeting 'আসসালামু আলাইকুম' (Assalamu Alaikum) first! Never say 'নমস্কার' or other greetings. After the greeting, write the detailed step-by-step solution or explanation in clear, beautifully formatted Bengali (বাংলা) language with emojis."
       }
     });
+
+    console.log("Gemini text response:", response.text);
 
     res.json({ result: response.text });
   } catch (error: any) {

@@ -39,19 +39,29 @@ import {
   Home,
   Users,
   Bot,
-  Mail
+  Mail,
+  Shield,
+  Bike,
+  Crosshair,
+  Skull,
+  Package,
+  Footprints,
+  Pickaxe,
+  Trophy,
+  Gauge,
+  Wind
 } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { CyberBladeNinja } from './components/games/CyberBladeNinja';
-import { RetroHighwayRacer } from './components/games/RetroHighwayRacer';
-import { SubwayRunner } from './components/games/SubwayRunner';
-import { KnifeMasterTarget } from './components/games/KnifeMasterTarget';
-import { ColorSwitchRush } from './components/games/ColorSwitchRush';
-import { NeonSnakeX } from './components/games/NeonSnakeX';
-import { GeometryDashLite } from './components/games/GeometryDashLite';
-import { BubbleShooterPop } from './components/games/BubbleShooterPop';
-import { BlockBlast } from './components/games/BlockBlast';
-import { CyberJetFlight } from './components/games/CyberJetFlight';
+import { GtaVHeistRacer } from './components/games/GtaVHeistRacer';
+import { SubwaySurfersParkour } from './components/games/SubwaySurfersParkour';
+import { GodOfWarRagnarok } from './components/games/GodOfWarRagnarok';
+import { CandyCrushRoyal } from './components/games/CandyCrushRoyal';
+import { Smart8BallPool } from './components/games/Smart8BallPool';
+import { WitcherMonsterHunt } from './components/games/WitcherMonsterHunt';
+import { TempleRunEscape } from './components/games/TempleRunEscape';
+import { KnifeHitMaster } from './components/games/KnifeHitMaster';
+import { WaterSortColorPuzzle } from './components/games/WaterSortColorPuzzle';
 import { CommunityForum } from './components/CommunityForum';
 import { FahadEntertainmentZone } from './components/FahadEntertainmentZone';
 import { NexusAiAssistant } from './components/NexusAiAssistant';
@@ -211,13 +221,23 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'cartoons' | 'songs' | 'movies'>('cartoons');
 
-  // Active game modal state (10 New & Ultra-Addictive Trendy Games)
+  // Active game modal state (10 Distinct Mega-Hit Genre Games)
   const [activeGame, setActiveGame] = useState<
-    'blade' | 'racer' | 'subway' | 'knife' | 'colorswitch' | 'snake' | 'geometry' | 'bubble' | 'block' | 'jet' | null
+    'blade' | 'gtav' | 'subway' | 'gow' | 'candy' | 'pool' | 'witcher' | 'temple' | 'knifehit' | 'watersort' | null
   >(null);
   const [gameSoundEnabled, setGameSoundEnabled] = useState(true);
+  const [gameVolume, setGameVolume] = useState(50);
+  const [showMobileGamepad, setShowMobileGamepad] = useState(true);
   const gameModalRef = useRef<HTMLDivElement>(null);
   const gamesSliderRef = useRef<HTMLDivElement>(null);
+
+  // Dispatch virtual key press for all games universally on phone touch
+  const triggerMobileKey = (key: string, code: string) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key, code, bubbles: true }));
+    setTimeout(() => {
+      window.dispatchEvent(new KeyboardEvent('keyup', { key, code, bubbles: true }));
+    }, 100);
+  };
 
   const scrollGames = (direction: 'left' | 'right') => {
     if (!gamesSliderRef.current) return;
@@ -693,33 +713,29 @@ export default function App() {
           <div className="flex items-center justify-between mb-6 md:mb-8">
             <div className="flex items-center gap-3">
               {/* Sleek Mini Gaming Logo */}
-              <div className="relative flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-xl bg-gradient-to-tr from-orange-600 via-amber-500 to-rose-600 p-[1.5px] shadow-sm shadow-orange-500/20">
+              <div className="relative flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-500 to-indigo-600 p-[1.5px] shadow-sm shadow-cyan-500/20">
                 <div className="w-full h-full bg-[#0a0f1c] rounded-[9px] flex items-center justify-center">
-                  <Gamepad2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-orange-400" />
+                  <Gamepad2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-cyan-400" />
                 </div>
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-gray-950 animate-pulse" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-cyan-400 rounded-full border border-gray-950 animate-pulse" />
               </div>
 
               <div>
-                <h2 className="text-2xl md:text-3xl font-extrabold flex items-center gap-2 text-white tracking-tight leading-none">
-                  <span className="bg-gradient-to-r from-white via-orange-100 to-orange-400 bg-clip-text text-transparent">
+                <h2 className="text-2xl md:text-3xl font-extrabold flex items-center gap-2 tracking-tight leading-none">
+                  <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(6,182,212,0.3)]">
                     Games
                   </span>
                 </h2>
-                <span className="text-[10px] text-gray-400 font-mono tracking-wider uppercase block mt-1">Smart Arcade Lounge</span>
+                <span className="text-[10px] text-cyan-400/70 font-mono tracking-wider uppercase block mt-1">Smart Arcade Lounge</span>
               </div>
             </div>
 
-            {/* Right: Badge + Small Left/Right Navigation Buttons */}
+            {/* Right: Small Left/Right Navigation Buttons */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-orange-400 bg-orange-950/40 border border-orange-500/30 px-3 py-1.5 rounded-full font-medium shadow-sm">
-                🎮 10 Games
-              </span>
-
               {/* Small Left Arrow Button */}
               <button
                 onClick={() => scrollGames('left')}
-                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-[#0c1220] border border-slate-700/80 hover:border-orange-500 hover:bg-orange-600 text-gray-300 hover:text-white flex items-center justify-center transition shadow-md active:scale-90 cursor-pointer"
+                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-[#0c1220] border border-slate-700/80 hover:border-cyan-500 hover:bg-cyan-600 text-gray-300 hover:text-white flex items-center justify-center transition shadow-md active:scale-90 cursor-pointer"
                 title="আগের গেমগুলো দেখুন (Scroll Left)"
               >
                 <ChevronLeft size={16} />
@@ -728,7 +744,7 @@ export default function App() {
               {/* Small Right Arrow Button */}
               <button
                 onClick={() => scrollGames('right')}
-                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-[#0c1220] border border-slate-700/80 hover:border-orange-500 hover:bg-orange-600 text-gray-300 hover:text-white flex items-center justify-center transition shadow-md active:scale-90 cursor-pointer"
+                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-[#0c1220] border border-slate-700/80 hover:border-cyan-500 hover:bg-cyan-600 text-gray-300 hover:text-white flex items-center justify-center transition shadow-md active:scale-90 cursor-pointer"
                 title="পরের গেমগুলো দেখুন (Scroll Right)"
               >
                 <ChevronRight size={16} />
@@ -744,16 +760,16 @@ export default function App() {
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {[
-                { id: 'blade', title: 'Cyber Blade Ninja', sub: 'Orb Slicer Action', tag: 'Top Hit', icon: Sword, color: 'text-cyan-400', badge: 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400', glow: 'shadow-cyan-500/20 bg-cyan-500/20 border-cyan-500/40' },
-                { id: 'racer', title: 'Retro Highway Racer', sub: 'Cyber Highway Speed', tag: 'Fast Racing', icon: Car, color: 'text-amber-400', badge: 'bg-amber-950/60 border-amber-500/30 text-amber-400', glow: 'shadow-amber-500/20 bg-amber-500/20 border-amber-500/40' },
-                { id: 'subway', title: 'Subway Runner', sub: 'Infinite Track Run', tag: 'Addictive', icon: Flame, color: 'text-emerald-400', badge: 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400', glow: 'shadow-emerald-500/20 bg-emerald-500/20 border-emerald-500/40' },
-                { id: 'knife', title: 'Knife Master Target', sub: 'Cyber Blade Pinning', tag: 'Reflex Hit', icon: Target, color: 'text-rose-400', badge: 'bg-rose-950/60 border-rose-500/30 text-rose-400', glow: 'shadow-rose-500/20 bg-rose-500/20 border-rose-500/40' },
-                { id: 'colorswitch', title: 'Color Switch Rush', sub: 'Physics Match Jumper', tag: 'Color Match', icon: Sparkles, color: 'text-purple-400', badge: 'bg-purple-950/60 border-purple-500/30 text-purple-400', glow: 'shadow-purple-500/20 bg-purple-500/20 border-purple-500/40' },
-                { id: 'snake', title: 'Neon Snake X', sub: 'Fluid Arcade Slither', tag: 'Classic', icon: Zap, color: 'text-emerald-400', badge: 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400', glow: 'shadow-emerald-500/20 bg-emerald-500/20 border-emerald-500/40' },
-                { id: 'geometry', title: 'Geometry Dash', sub: 'Rhythm Spike Jumper', tag: 'Rhythm', icon: Rocket, color: 'text-cyan-400', badge: 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400', glow: 'shadow-cyan-500/20 bg-cyan-500/20 border-cyan-500/40' },
-                { id: 'bubble', title: 'Bubble Shooter', sub: 'Color Pop Cannon', tag: 'Puzzle', icon: Sparkles, color: 'text-cyan-400', badge: 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400', glow: 'shadow-cyan-500/20 bg-cyan-500/20 border-cyan-500/40' },
-                { id: 'block', title: 'Block Blast 1010', sub: '8x8 Line Clear Puzzle', tag: 'Brain', icon: Brain, color: 'text-cyan-400', badge: 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400', glow: 'shadow-cyan-500/20 bg-cyan-500/20 border-cyan-500/40' },
-                { id: 'jet', title: 'Cyber Jet Flight', sub: '3D City Evader Jet', tag: '3D Jet', icon: Rocket, color: 'text-purple-400', badge: 'bg-purple-950/60 border-purple-500/30 text-purple-400', glow: 'shadow-purple-500/20 bg-purple-500/20 border-purple-500/40' },
+                { id: 'blade', title: 'Cyber Blade Ninja', sub: 'Orb Slicer Action', tag: 'Slicer Hit', icon: Sword, color: 'text-cyan-400', badge: 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400', glow: 'shadow-cyan-500/20 bg-cyan-500/20 border-cyan-500/40' },
+                { id: 'gtav', title: 'Grand Theft Auto V', sub: 'Los Santos Highway Heist', tag: 'GTA V', icon: Car, color: 'text-amber-400', badge: 'bg-amber-950/60 border-amber-500/30 text-amber-400', glow: 'shadow-amber-500/20 bg-amber-500/20 border-amber-500/40' },
+                { id: 'subway', title: 'Subway Surfers', sub: '3D Subway Train Parkour', tag: 'Top Runner', icon: Footprints, color: 'text-sky-400', badge: 'bg-sky-950/60 border-sky-500/30 text-sky-400', glow: 'shadow-sky-500/20 bg-sky-500/20 border-sky-500/40' },
+                { id: 'gow', title: 'God of War: Ragnarök', sub: 'Leviathan Axe & Frost Recall', tag: 'God of War', icon: Shield, color: 'text-blue-400', badge: 'bg-blue-950/60 border-blue-500/30 text-blue-400', glow: 'shadow-blue-500/20 bg-blue-500/20 border-blue-500/40' },
+                { id: 'candy', title: 'Candy Crush Saga', sub: 'Royal Match-3 Jewel Blitz', tag: 'Play Store #1', icon: Sparkles, color: 'text-pink-400', badge: 'bg-pink-950/60 border-pink-500/30 text-pink-400', glow: 'shadow-pink-500/20 bg-pink-500/20 border-pink-500/40' },
+                { id: 'pool', title: '8 Ball Smart Pool', sub: 'Laser Aim Cue Billiards', tag: 'Smart Physics', icon: Target, color: 'text-emerald-400', badge: 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400', glow: 'shadow-emerald-500/20 bg-emerald-500/20 border-emerald-500/40' },
+                { id: 'witcher', title: 'The Witcher 3: Wild Hunt', sub: 'Silver Sword & Igni Slayer', tag: 'Witcher 3', icon: Sword, color: 'text-sky-400', badge: 'bg-sky-950/60 border-sky-500/30 text-sky-400', glow: 'shadow-sky-500/20 bg-sky-500/20 border-sky-500/40' },
+                { id: 'temple', title: 'Temple Run', sub: 'Ancient Ruin Monster Escape', tag: 'Classic Escape', icon: Flame, color: 'text-orange-400', badge: 'bg-orange-950/60 border-orange-500/30 text-orange-400', glow: 'shadow-orange-500/20 bg-orange-500/20 border-orange-500/40' },
+                { id: 'knifehit', title: 'Knife Hit Master', sub: 'Spinning Wheel Log Slasher', tag: 'Target Hit', icon: Sword, color: 'text-rose-400', badge: 'bg-rose-950/60 border-rose-500/30 text-rose-400', glow: 'shadow-rose-500/20 bg-rose-500/20 border-rose-500/40' },
+                { id: 'watersort', title: 'Water Sort Color Puzzle', sub: 'Smart Liquid Tube Brain', tag: 'Smart Logic #1', icon: Sparkles, color: 'text-cyan-400', badge: 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400', glow: 'shadow-cyan-500/20 bg-cyan-500/20 border-cyan-500/40' },
               ].map((g) => {
                 const IconComponent = g.icon;
                 return (
@@ -1037,79 +1053,93 @@ export default function App() {
         </div>
       )}
 
-      {/* Fullscreen Game Modal - Responsive on Mobile, Laptop & PC with Exit Button */}
+      {/* Fullscreen Game Modal - Optimized for 100dvh Phone & PC with Universal Touch System */}
       {activeGame && (
         <div 
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
-          onClick={() => setActiveGame(null)}
+          className="fixed inset-0 w-screen h-[100dvh] z-[200] bg-black flex items-center justify-center overflow-hidden touch-none select-none overscroll-none"
         >
           <div 
             ref={gameModalRef}
-            className="relative w-full max-w-lg bg-[#0c1220] rounded-2xl md:rounded-3xl border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col my-auto"
-            onClick={(e) => e.stopPropagation()}
+            className="relative w-full h-full flex flex-col bg-black overflow-hidden touch-none"
           >
-            {/* Game Modal Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-[#0a0f1c] border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <Gamepad2 size={18} className="text-orange-500" />
-                <span className="font-bold text-sm sm:text-base text-white">
-                  {activeGame === 'blade' && 'Cyber Blade Ninja'}
-                  {activeGame === 'racer' && 'Retro Highway Racer'}
-                  {activeGame === 'subway' && 'Subway Runner 2D'}
-                  {activeGame === 'knife' && 'Knife Master Target'}
-                  {activeGame === 'colorswitch' && 'Color Switch Rush'}
-                  {activeGame === 'snake' && 'Neon Snake X'}
-                  {activeGame === 'geometry' && 'Geometry Dash Lite'}
-                  {activeGame === 'bubble' && 'Bubble Shooter Pop'}
-                  {activeGame === 'block' && 'Block Blast 1010'}
-                  {activeGame === 'jet' && 'Cyber Jet Flight'}
-                </span>
+            {/* Top Game Bar with Volume Slider, Fullscreen & Clear Exit Button */}
+            <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 z-[220] flex items-center gap-2 bg-slate-950/85 backdrop-blur-md p-1.5 sm:p-2 rounded-full border border-white/15 shadow-2xl pointer-events-auto">
+              {/* Volume Controls */}
+              <div className="flex items-center gap-1.5 px-1.5 sm:px-2">
+                <button
+                  onClick={() => {
+                    const next = !gameSoundEnabled;
+                    setGameSoundEnabled(next);
+                    gameSound.enabled = next;
+                    if (next && gameVolume === 0) {
+                      setGameVolume(50);
+                      gameSound.setVolume(0.5);
+                    }
+                  }}
+                  className="text-slate-300 hover:text-white transition"
+                  title={gameSoundEnabled ? 'মিউট করুন' : 'আনমিউট করুন'}
+                >
+                  {gameSoundEnabled && gameVolume > 0 ? (
+                    <Volume2 size={18} className="text-cyan-400" />
+                  ) : (
+                    <VolumeX size={18} className="text-rose-400" />
+                  )}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={gameSoundEnabled ? gameVolume : 0}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    setGameVolume(v);
+                    gameSound.setVolume(v / 100);
+                    setGameSoundEnabled(v > 0);
+                  }}
+                  className="w-12 sm:w-20 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                  title={`সাউন্ড ভলিউম: ${gameVolume}%`}
+                />
+                <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">{gameVolume}%</span>
               </div>
 
-              {/* Action Buttons: Sound, Fullscreen, and Exit */}
-              <div className="flex items-center gap-2">
-                {/* Sound Toggle */}
-                <button
-                  onClick={toggleGameSound}
-                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition border border-gray-800 cursor-pointer"
-                  title={gameSoundEnabled ? 'মিউট করুন (Mute Sound)' : 'শব্দ চালু করুন (Unmute Sound)'}
-                >
-                  {gameSoundEnabled ? <Volume2 size={16} className="text-emerald-400" /> : <VolumeX size={16} className="text-red-400" />}
-                </button>
+              {/* Fullscreen API Toggle */}
+              <button
+                onClick={() => {
+                  if (!document.fullscreenElement) {
+                    gameModalRef.current?.requestFullscreen?.().catch(() => {});
+                  } else {
+                    document.exitFullscreen?.().catch(() => {});
+                  }
+                }}
+                className="p-1.5 sm:p-2 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition shadow border border-white/10"
+                title="ফুলস্ক্রিন করুন"
+              >
+                <Maximize size={16} />
+              </button>
 
-                {/* Fullscreen Button for mobile / pc */}
-                <button
-                  onClick={toggleGameFullScreen}
-                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition border border-gray-800 cursor-pointer hidden xs:inline-flex"
-                  title="ফুলস্ক্রিন মোড"
-                >
-                  <Maximize size={16} />
-                </button>
-
-                {/* Exit Game / Back to Website button */}
-                <button
-                  onClick={() => setActiveGame(null)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition cursor-pointer shadow-sm"
-                  title="গেম থেকে বের হয়ে ওয়েবসাইটে ফিরে যান"
-                >
-                  <X size={15} />
-                  <span>Exit Game</span>
-                </button>
-              </div>
+              {/* Clear Red Exit Button */}
+              <button
+                onClick={() => setActiveGame(null)}
+                className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white transition shadow-lg font-bold text-xs flex items-center gap-1 border border-rose-400/40 active:scale-95 cursor-pointer"
+                title="গেম থেকে বের হন"
+              >
+                <X size={16} />
+                <span>বের হন</span>
+              </button>
             </div>
 
-            {/* Game Content Body */}
-            <div className="p-3 sm:p-5 flex flex-col items-center game-play-area cursor-default">
+            {/* Game Content Body - Filling 100% of the screen */}
+            <div className="flex-grow w-full h-full flex items-center justify-center game-play-area overflow-hidden relative">
               {activeGame === 'blade' && <CyberBladeNinja />}
-              {activeGame === 'racer' && <RetroHighwayRacer />}
-              {activeGame === 'subway' && <SubwayRunner />}
-              {activeGame === 'knife' && <KnifeMasterTarget />}
-              {activeGame === 'colorswitch' && <ColorSwitchRush />}
-              {activeGame === 'snake' && <NeonSnakeX />}
-              {activeGame === 'geometry' && <GeometryDashLite />}
-              {activeGame === 'bubble' && <BubbleShooterPop />}
-              {activeGame === 'block' && <BlockBlast />}
-              {activeGame === 'jet' && <CyberJetFlight />}
+              {activeGame === 'gtav' && <GtaVHeistRacer />}
+              {activeGame === 'subway' && <SubwaySurfersParkour />}
+              {activeGame === 'gow' && <GodOfWarRagnarok />}
+              {activeGame === 'candy' && <CandyCrushRoyal />}
+              {activeGame === 'pool' && <Smart8BallPool />}
+              {activeGame === 'witcher' && <WitcherMonsterHunt />}
+              {activeGame === 'temple' && <TempleRunEscape />}
+              {activeGame === 'knifehit' && <KnifeHitMaster />}
+              {activeGame === 'watersort' && <WaterSortColorPuzzle />}
             </div>
           </div>
         </div>
