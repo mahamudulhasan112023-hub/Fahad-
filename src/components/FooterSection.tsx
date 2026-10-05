@@ -7,12 +7,7 @@ import {
 } from 'lucide-react';
 import { gameSound } from '../utils/gameSound';
 
-// Custom icons for X (Twitter), Telegram, WhatsApp
-const XIcon = () => (
-  <svg className="w-4 h-4 text-gray-200 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-  </svg>
-);
+// Custom icons for Telegram and WhatsApp
 
 const TelegramIcon = () => (
   <svg className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" fill="currentColor">
@@ -128,24 +123,6 @@ export const FooterSection: React.FC = () => {
             <h4 className="text-xs font-black text-white uppercase tracking-wider md:text-right">Connect With Me</h4>
             
             <div className="flex items-center gap-2.5 flex-wrap md:justify-end">
-              {/* X (Twitter) */}
-              <a 
-                href="https://x.com/MahamudulH95331" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                onClick={() => handleSocialClick('x')}
-                title="X (Twitter)"
-                className={`relative group w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center transition-all duration-300 shadow-lg active:scale-90 cursor-pointer p-[2px] animate-running-border ${
-                  clickedSocial === 'x' 
-                    ? 'bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 scale-110 shadow-cyan-500/50' 
-                    : 'hover:bg-gradient-to-r hover:from-cyan-500 hover:via-indigo-500 hover:to-purple-500 hover:shadow-cyan-500/40'
-                }`}
-              >
-                <div className="w-full h-full bg-[#0b101d] rounded-[14px] flex items-center justify-center group-hover:bg-transparent transition-colors duration-300">
-                  <XIcon />
-                </div>
-              </a>
-
               {/* Telegram */}
               <a 
                 href="https://t.me/mh0_0o1" 

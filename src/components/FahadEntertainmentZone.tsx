@@ -93,7 +93,12 @@ export interface NexusPost {
   comments: NexusComment[];
 }
 
-export const FahadEntertainmentZone: React.FC = () => {
+export interface FahadEntertainmentZoneProps {
+  initialAuthMode?: 'login' | 'signup' | null;
+  onAuthStateChange?: (isLoggedIn: boolean) => void;
+}
+
+export const FahadEntertainmentZone: React.FC<FahadEntertainmentZoneProps> = ({ initialAuthMode, onAuthStateChange }) => {
   // Current Logged-In User with Automatic Backwards Compatibility and Legacy Keys Migration
   const [currentUser, setCurrentUser] = useState<NexusUser | null>(() => {
     try {
@@ -182,7 +187,7 @@ export const FahadEntertainmentZone: React.FC = () => {
   });
 
   // App Dedicated Workspace View
-  const [isAppOpen, setIsAppOpen] = useState<boolean>(false);
+  const [isAppOpen, setIsAppOpen] = useState<boolean>(true);
   const [appActiveTab, setAppActiveTab] = useState<'timeline' | 'myposts' | 'users'>('timeline');
 
   // Search Queries inside Workspace
@@ -195,6 +200,19 @@ export const FahadEntertainmentZone: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [viewingPublicUser, setViewingPublicUser] = useState<NexusUser | null>(null);
   const [deleteConfirmPostId, setDeleteConfirmPostId] = useState<string | null>(null);
+
+  // Sync Auth State to Parent
+  useEffect(() => {
+    onAuthStateChange?.(!!currentUser);
+  }, [currentUser, onAuthStateChange]);
+
+  // Handle Initial Auth Mode from external button
+  useEffect(() => {
+    if (!currentUser && initialAuthMode) {
+      setAuthTab(initialAuthMode);
+      setShowAuthModal(true);
+    }
+  }, [initialAuthMode, currentUser]);
 
   // Form Fields - Signup (Simplified as requested: Full Name, Identifier (Email or Phone), Password, DOB, Gender)
   const [formName, setFormName] = useState('');
@@ -763,10 +781,26 @@ export const FahadEntertainmentZone: React.FC = () => {
     gameSound.playBounce();
   };
 
-  let displayPosts = posts;
-  if (appActiveTab === 'myposts' && currentUser) {
-    displayPosts = posts.filter(p => p.authorId === currentUser.id);
+  let displayPosts = [...posts];
+
+  if (appActiveTab === 'myposts') {
+    if (currentUser) {
+      displayPosts = displayPosts.filter(p => p.authorId === currentUser.id);
+    } else {
+      displayPosts = [];
+    }
+  } else if (appActiveTab === 'timeline') {
+    // Sort Timeline posts by reach & engagement (Likes + Reactions + Comments count)
+    displayPosts.sort((a, b) => {
+      const reachA = Object.values(a.reactions || {}).reduce((sum, val) => sum + (val || 0), 0) + (a.comments?.length || 0);
+      const reachB = Object.values(b.reactions || {}).reduce((sum, val) => sum + (val || 0), 0) + (b.comments?.length || 0);
+      if (reachB !== reachA) {
+        return reachB - reachA; // Highest reach / engagement first
+      }
+      return b.id.localeCompare(a.id); // Latest post first if reach is equal
+    });
   }
+
   if (postSearchQuery.trim()) {
     const q = postSearchQuery.toLowerCase().trim();
     displayPosts = displayPosts.filter(p => 
@@ -778,11 +812,19 @@ export const FahadEntertainmentZone: React.FC = () => {
   const filteredUsers = usersDb.filter(u => {
     if (!userSearchQuery.trim()) return true;
     const q = userSearchQuery.toLowerCase().trim();
-    return u.name.toLowerCase().includes(q) || (u.bio && u.bio.toLowerCase().includes(q));
+    return (
+      u.name.toLowerCase().includes(q) ||
+      (u.email && u.email.toLowerCase().includes(q)) ||
+      (u.phone && u.phone.includes(q)) ||
+      (u.bio && u.bio.toLowerCase().includes(q)) ||
+      (u.hometown && u.hometown.toLowerCase().includes(q)) ||
+      (u.school && u.school.toLowerCase().includes(q)) ||
+      (u.occupation && u.occupation.toLowerCase().includes(q))
+    );
   });
 
   return (
-    <section id="nexus-portal" className="mt-28 md:mt-32 pb-20 scroll-mt-24">
+    <div className="w-full flex flex-col space-y-6">
       {/* TOAST POPUP */}
       {toastText && (
         <div className="fixed top-24 right-4 z-50 bg-[#0c1328] border border-cyan-400 text-cyan-200 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-bold animate-bounce-subtle flex items-center gap-2 animate-fade-in">
@@ -795,183 +837,103 @@ export const FahadEntertainmentZone: React.FC = () => {
       <input type="file" accept="image/*" ref={postImageFileRef} onChange={handlePostImageSelect} className="hidden" />
       <input type="file" accept="image/*" ref={avatarFileRef} onChange={handleAvatarSelect} className="hidden" />
 
-      {/* NEXUS SECTION CARD */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#0a0f24] via-[#070b1a] to-[#0e162f] border border-cyan-500/40 shadow-2xl space-y-4 relative overflow-hidden transition-all duration-500 hover:scale-[1.002] hover:border-cyan-500/60 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-cyan-500/30 border border-white/20 shrink-0">
-              <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 3v6M12 15v6M3 12h6M15 12h6" />
-                <circle cx="12" cy="3" r="1.5" />
-                <circle cx="12" cy="21" r="1.5" />
-                <circle cx="3" cy="12" r="1.5" />
-                <circle cx="21" cy="12" r="1.5" />
-              </svg>
-            </div>
-
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-wider flex items-center gap-2">
-                <span className="bg-gradient-to-r from-cyan-400 via-sky-200 to-blue-400 bg-clip-text text-transparent uppercase">
-                  NEXUS
-                </span>
-                <span className="text-[10px] bg-cyan-950 border border-cyan-500/40 text-cyan-300 px-2.5 py-0.5 rounded-full font-mono font-bold tracking-normal">
-                  Social Network
-                </span>
-              </h2>
-              <p className="text-xs text-gray-400 mt-0.5">
-                নিরাপদ অ্যাকাউন্ট খুলুন, বায়োডাটা (স্কুল, পেশা, প্লেস) যোগ করুন ও চিরস্থায়ী রিয়েল পোস্ট শেয়ার করুন!
-              </p>
-            </div>
+      {/* NEXUS SOCIAL WORKSPACE HEADER & NAVIGATION */}
+      <div className="bg-[#080d1e]/95 border border-cyan-500/30 rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-xs shadow">
+            NX
           </div>
+          <div>
+            <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-wider leading-none">
+              NEXUS Social
+            </h2>
+            <span className="text-[10px] text-cyan-400 font-mono">লাইভ সোশ্যাল নেটওয়ার্ক</span>
+          </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {!currentUser ? (
-              <>
-                <button
-                  onClick={() => {
-                    setShowAuthModal(true);
-                    setAuthTab('login');
-                    setStatusMsg(null);
-                  }}
-                  className="px-4 py-2 rounded-2xl bg-slate-900 border border-slate-700 hover:border-cyan-500 text-xs font-bold text-gray-200 hover:text-white transition cursor-pointer shadow-sm"
-                >
-                  লগইন
-                </button>
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1.5 bg-[#040711] p-1 rounded-2xl border border-slate-800">
+          <button
+            onClick={() => {
+              setAppActiveTab('timeline');
+              gameSound.playBounce();
+            }}
+            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+              appActiveTab === 'timeline' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            টাইমলাইন
+          </button>
 
-                <button
-                  onClick={() => {
-                    setShowAuthModal(true);
-                    setAuthTab('signup');
-                    setStatusMsg(null);
-                  }}
-                  className="px-4 py-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  <UserCheck size={14} />
-                  <span>নতুন অ্যাকাউন্ট তৈরি</span>
-                </button>
-              </>
-            ) : (
+          <button
+            onClick={() => {
+              if (!currentUser) {
+                setShowAuthModal(true);
+                setAuthTab('login');
+                return;
+              }
+              setAppActiveTab('myposts');
+              gameSound.playBounce();
+            }}
+            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+              appActiveTab === 'myposts' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            আমার পোস্টসমূহ
+          </button>
+
+          <button
+            onClick={() => {
+              setAppActiveTab('users');
+              gameSound.playBounce();
+            }}
+            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+              appActiveTab === 'users' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            ইউজারবৃন্দ ({usersDb.length})
+          </button>
+        </div>
+
+        {/* User Status / Login / Profile Chip */}
+        <div className="flex items-center gap-2">
+          {!currentUser ? (
+            <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setShowProfileModal(true)}
-                className="px-3.5 py-2 rounded-2xl bg-[#040711] border border-cyan-500/40 text-xs font-bold text-cyan-300 hover:text-white flex items-center gap-1.5 cursor-pointer"
+                onClick={() => {
+                  setShowAuthModal(true);
+                  setAuthTab('login');
+                  setStatusMsg(null);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-gray-200 transition cursor-pointer"
               >
-                <img src={currentUser.avatar} alt="Profile" className="w-5 h-5 rounded-full object-cover border border-cyan-400" />
-                <span>{currentUser.name}</span>
+                লগইন
               </button>
-            )}
-
+              <button
+                onClick={() => {
+                  setShowAuthModal(true);
+                  setAuthTab('signup');
+                  setStatusMsg(null);
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs transition shadow-md cursor-pointer active:scale-95"
+              >
+                সাইন-আপ
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={() => {
-                setIsAppOpen(true);
-                gameSound.playStart();
-              }}
-              className="px-5 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs transition shadow-xl shadow-emerald-500/30 flex items-center gap-2 cursor-pointer active:scale-95 animate-pulse"
+              onClick={() => setShowProfileModal(true)}
+              className="px-3 py-1.5 rounded-xl bg-[#040711] border border-cyan-500/40 text-xs font-bold text-cyan-300 hover:text-white flex items-center gap-1.5 cursor-pointer shadow-sm"
             >
-              <span>ওপেন করুন (Let's Go)</span>
-              <ChevronRight size={16} />
+              <img src={currentUser.avatar} alt="Profile" className="w-5 h-5 rounded-full object-cover border border-cyan-400" />
+              <span>{currentUser.name}</span>
             </button>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* FULL NEXUS APP WORKSPACE VIEW */}
-      {isAppOpen && (
-        <div className="fixed inset-0 z-50 bg-[#050812] overflow-y-auto flex flex-col">
-          {/* Workspace Header */}
-          <div className="sticky top-0 z-40 bg-[#080d1e]/95 backdrop-blur-md border-b border-cyan-500/30 px-4 py-3 flex items-center justify-between gap-3 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-xs shadow">
-                NX
-              </div>
-              <h2 className="text-base font-black text-white uppercase tracking-wider hidden sm:block">
-                NEXUS App Workspace
-              </h2>
-            </div>
-
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-1.5 bg-[#040711] p-1 rounded-2xl border border-slate-800">
-              <button
-                onClick={() => {
-                  setAppActiveTab('timeline');
-                  gameSound.playBounce();
-                }}
-                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
-                  appActiveTab === 'timeline' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                টাইমলাইন
-              </button>
-
-              <button
-                onClick={() => {
-                  if (!currentUser) {
-                    setShowAuthModal(true);
-                    setAuthTab('login');
-                    return;
-                  }
-                  setAppActiveTab('myposts');
-                  gameSound.playBounce();
-                }}
-                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
-                  appActiveTab === 'myposts' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                আমার পোস্টসমূহ
-              </button>
-
-              <button
-                onClick={() => {
-                  setAppActiveTab('users');
-                  gameSound.playBounce();
-                }}
-                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
-                  appActiveTab === 'users' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                ইউজারবৃন্দ ({usersDb.length})
-              </button>
-            </div>
-
-            {/* Exit App Button */}
-            <button
-              onClick={() => setIsAppOpen(false)}
-              className="px-3.5 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
-            >
-              <X size={15} />
-              <span>বন্ধ করুন</span>
-            </button>
-          </div>
-
-          <div className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex-1 max-w-3xl w-full mx-auto space-y-6">
             
-            {/* Live Counters displayed prominently inside the App Workspace */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-3.5 rounded-2xl bg-[#090d1a] border border-cyan-500/20 shadow-lg flex items-center gap-3">
-                <Users size={20} className="text-cyan-400 shrink-0" />
-                <div>
-                  <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">নিবন্ধিত মেম্বার</span>
-                  <span className="text-sm font-black text-white">{usersDb.length} Members</span>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-[#090d1a] border border-emerald-500/20 shadow-lg flex items-center gap-3">
-                <Globe size={20} className="text-emerald-400 shrink-0" />
-                <div>
-                  <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">স্থায়ী পোস্ট সংখ্যা</span>
-                  <span className="text-sm font-black text-white">{posts.length} Posts</span>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-[#090d1a] border border-amber-500/20 shadow-lg flex items-center gap-3">
-                <ShieldCheck size={20} className="text-amber-400 shrink-0" />
-                <div>
-                  <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">প্রোফাইল বায়োডাটা</span>
-                  <span className="text-xs font-black text-amber-400 font-mono">কাস্টমাইজ কাস্টম সক্রিয়</span>
-                </div>
-              </div>
-            </div>
-
             {/* POST COMPOSER */}
             <div className="p-4 sm:p-5 rounded-3xl bg-[#090d1a] border border-slate-800 shadow-2xl space-y-3">
               <form onSubmit={handleCreatePost} className="space-y-3">
@@ -1353,8 +1315,6 @@ export const FahadEntertainmentZone: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-      )}
 
       {/* CONFIRM DELETE MODAL */}
       {deleteConfirmPostId && (
@@ -1914,6 +1874,6 @@ export const FahadEntertainmentZone: React.FC = () => {
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 };

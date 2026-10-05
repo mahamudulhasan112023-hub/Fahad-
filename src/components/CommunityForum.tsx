@@ -349,7 +349,12 @@ const loadPermanentActiveUser = (): UserProfile | null => {
   return null;
 };
 
-export const CommunityForum: React.FC = () => {
+export interface CommunityForumProps {
+  initialAuthMode?: 'login' | 'signup' | null;
+  onAuthStateChange?: (isLoggedIn: boolean) => void;
+}
+
+export const CommunityForum: React.FC<CommunityForumProps> = ({ initialAuthMode, onAuthStateChange }) => {
   // Permanent Master Database States
   const [usersList, setUsersList] = useState<UserProfile[]>(loadPermanentUsers);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(loadPermanentActiveUser);
@@ -400,6 +405,20 @@ export const CommunityForum: React.FC = () => {
   const [authAvatar, setAuthAvatar] = useState(PRESET_AVATARS[0]);
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
+
+  // Handle Initial Auth Mode if requested from external Card Button
+  useEffect(() => {
+    if (!currentUser) {
+      setAuthMode(initialAuthMode || 'login');
+      setShowAuthModal(true);
+      setAuthError('');
+    }
+  }, [initialAuthMode, currentUser]);
+
+  // Sync Auth State to Parent
+  useEffect(() => {
+    onAuthStateChange?.(!!currentUser);
+  }, [currentUser, onAuthStateChange]);
 
   // Profile View & Edit Modal
   const [viewingProfile, setViewingProfile] = useState<UserProfile | null>(null);
@@ -1748,68 +1767,8 @@ export const CommunityForum: React.FC = () => {
         </div>
       </div>
 
-      {/* LOCKED GATEWAY IF NOT LOGGED IN */}
-      {!currentUser ? (
-        <div className="rounded-2xl md:rounded-3xl bg-[#080d1a] border border-slate-800/90 shadow-2xl p-6 sm:p-10 text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.002] hover:border-amber-500/60 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-          <div className="max-w-md mx-auto flex flex-col items-center">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-xl shadow-orange-600/30 mb-4 animate-pulse">
-              <Lock size={26} />
-            </div>
-
-            <h3 className="text-lg sm:text-xl font-extrabold text-white mb-1.5">
-              কমিউনিটি গ্রুপে স্বাগতম
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed mb-6">
-              একসাথে মেসেজ করতে, ভিডিও ও ছবি দিতে, স্পষ্ট ভয়েস মেসেজ পাঠাতে এবং লাইভ গ্রুপ কলে যুক্ত হয়ে একে অপরের সাথে কথা বলতে অনুগ্রহ করে আপনার অ্যাকাউন্টে যুক্ত হোন।
-            </p>
-
-            <div className="grid grid-cols-4 gap-2 w-full mb-6">
-              <div className="p-2 rounded-xl bg-[#050811] border border-slate-800 text-center">
-                <span className="text-base block mb-0.5">💬</span>
-                <span className="text-[10px] font-bold text-gray-300">গ্রুপ চ্যাট</span>
-              </div>
-              <div className="p-2 rounded-xl bg-[#050811] border border-slate-800 text-center">
-                <span className="text-base block mb-0.5">🎙️</span>
-                <span className="text-[10px] font-bold text-gray-300">ভয়েস মেসেজ</span>
-              </div>
-              <div className="p-2 rounded-xl bg-[#050811] border border-slate-800 text-center">
-                <span className="text-base block mb-0.5">📞</span>
-                <span className="text-[10px] font-bold text-gray-300">গ্রুপ কল</span>
-              </div>
-              <div className="p-2 rounded-xl bg-[#050811] border border-slate-800 text-center">
-                <span className="text-base block mb-0.5">🔒</span>
-                <span className="text-[10px] font-bold text-gray-300">প্রাইভেট ডিএম</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
-              <button
-                onClick={() => {
-                  setAuthMode('login');
-                  setAuthError('');
-                  setShowAuthModal(true);
-                }}
-                className="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500 text-xs font-bold text-white transition cursor-pointer shadow-md"
-              >
-                লগইন করুন
-              </button>
-              <button
-                onClick={() => {
-                  setAuthMode('signup');
-                  setAuthError('');
-                  setShowAuthModal(true);
-                }}
-                className="flex-1 sm:flex-initial px-6 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-extrabold shadow-lg shadow-orange-600/40 transition cursor-pointer active:scale-95"
-              >
-                যুক্ত হোন (অ্যাকাউন্ট খুলুন)
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* TOP TAB BAR: 💬 কমিউনিটি গ্রুপ | 👥 মেম্বার | 🔒 প্রাইভেট DM */}
-          <div className="mb-3 bg-[#080d19] border border-slate-800/80 rounded-2xl p-2 shadow-lg">
+      {/* TOP TAB BAR: 💬 কমিউনিটি গ্রুপ | 👥 মেম্বার | 🔒 প্রাইভেট DM */}
+      <div className="mb-3 bg-[#080d19] border border-slate-800/80 rounded-2xl p-2 shadow-lg">
             <div className="flex items-center justify-between gap-2 overflow-x-auto select-none">
               
               <div className="flex items-center gap-1.5 shrink-0 bg-[#050811] p-1 rounded-xl border border-slate-800/80">
@@ -1850,7 +1809,7 @@ export const CommunityForum: React.FC = () => {
                   onClick={() => {
                     setViewTab('dm');
                     if (!selectedDmUser && usersList.length > 1) {
-                      const target = usersList.find((u) => u.id !== currentUser.id) || usersList[0];
+                      const target = usersList.find((u) => u.id !== currentUser?.id) || usersList[0];
                       setSelectedDmUser(target);
                     }
                     gameSound.start();
@@ -2861,8 +2820,6 @@ export const CommunityForum: React.FC = () => {
               </div>
             )}
           </div>
-        </>
-      )}
 
       {/* DELETE CONFIRMATION MODAL (Delete for Me vs Delete for Everyone) */}
       {deleteTargetMessage && (

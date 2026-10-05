@@ -91,22 +91,24 @@ const VideoSection: React.FC<VideoSectionProps> = ({ title, videos, icon: Icon, 
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6 md:mb-8">
         <h2 className="text-2xl md:text-3xl font-extrabold flex items-center gap-3 text-white tracking-tight">
-          <Icon className="w-7 h-7 md:w-8 md:h-8 text-orange-500" /> 
-          <span className="bg-gradient-to-r from-white via-orange-100 to-orange-400 bg-clip-text text-transparent">
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-slate-800 border border-slate-700/80 flex items-center justify-center">
+            <Icon className="w-4 h-4 md:w-5 md:h-5 text-slate-200" />
+          </div>
+          <span className="bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
             {title}
           </span>
         </h2>
-        <span className="text-xs text-orange-400 bg-orange-950/40 border border-orange-500/30 px-3 py-1 rounded-full font-medium">
+        <span className="text-xs text-slate-300 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full font-mono font-medium">
           {videos.length} Videos
         </span>
       </div>
 
       {/* Video Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-7">
         {displayedVideos.map((video) => (
           <div 
             key={video.id}
-            className="group rounded-2xl md:rounded-3xl overflow-hidden bg-[#0c1220] border border-slate-800/80 shadow-xl hover:border-slate-700 transition duration-300 flex flex-col"
+            className="group rounded-2xl md:rounded-3xl overflow-hidden bg-[#0a0f1c] border border-slate-800/90 shadow-xl hover:border-slate-700 transition duration-300 flex flex-col"
           >
             {/* Top Thumbnail Section or Inline In-Place Player */}
             <div className="relative aspect-video w-full overflow-hidden bg-black rounded-t-2xl md:rounded-t-3xl">
@@ -158,10 +160,10 @@ const VideoSection: React.FC<VideoSectionProps> = ({ title, videos, icon: Icon, 
                   {/* Subtle dark overlay */}
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
 
-                  {/* Center Orange Play Button */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 pointer-events-none">
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-600/40 group-hover:scale-110 group-hover:from-orange-500 group-hover:to-amber-400 transition-transform duration-200">
-                      <Play className="w-6 h-6 text-white fill-white ml-1" />
+                  {/* Center Clean White Play Button */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 scale-100 group-hover:scale-110 pointer-events-none">
+                    <div className="w-12 h-12 md:w-15 md:h-15 rounded-full bg-white/95 text-slate-950 flex items-center justify-center shadow-2xl shadow-black/80 group-hover:scale-110 transition-transform duration-200 border border-white">
+                      <Play className="w-5 h-5 text-slate-950 fill-slate-950 ml-0.5" />
                     </div>
                   </div>
                 </div>
@@ -169,12 +171,12 @@ const VideoSection: React.FC<VideoSectionProps> = ({ title, videos, icon: Icon, 
             </div>
 
             {/* Bottom Card Details Bar */}
-            <div className="px-4 py-3.5 bg-[#0c1220] border-t border-slate-800/60 flex items-center justify-between">
+            <div className="px-4 py-3 bg-[#0a0f1c] border-t border-slate-800/80 flex items-center justify-between">
               <div className="min-w-0 pr-2">
-                <h3 className="font-bold text-base md:text-lg text-white tracking-tight truncate">
+                <h3 className="font-bold text-sm md:text-base text-white tracking-tight truncate">
                   {video.title}
                 </h3>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-[11px] text-gray-400 mt-0.5">
                   {video.subtitle || 'Video Editing'}
                 </p>
               </div>
@@ -185,10 +187,10 @@ const VideoSection: React.FC<VideoSectionProps> = ({ title, videos, icon: Icon, 
                   setPlayingVideoId(null);
                   onSelectVideo(video, 'large');
                 }}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 text-amber-500 hover:bg-orange-600 hover:text-white hover:border-orange-600 text-xs font-semibold transition-all duration-200 cursor-pointer"
+                className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800/90 text-slate-200 hover:bg-white hover:text-slate-950 hover:border-white text-xs font-semibold transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
                 title="ফুল ভিউতে দেখুন (Full View)"
               >
-                <Maximize size={13} />
+                <Maximize size={12} />
                 <span>Full View</span>
               </button>
             </div>
@@ -201,12 +203,12 @@ const VideoSection: React.FC<VideoSectionProps> = ({ title, videos, icon: Icon, 
         <div className="text-center mt-8">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gray-900 border border-gray-800 text-sm font-semibold text-gray-200 hover:text-white hover:bg-orange-600 hover:border-orange-600 transition-colors duration-200 shadow-md"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-200 hover:text-slate-950 hover:bg-white transition-all duration-200 shadow-md cursor-pointer active:scale-95"
           >
             {showAll ? (
-              <>Show Less <ChevronUp size={16} /></>
+              <>Show Less <ChevronUp size={14} /></>
             ) : (
-              <>Show More ({videos.length - 3} more) <ChevronDown size={16} /></>
+              <>Show More ({videos.length - 3} more) <ChevronDown size={14} /></>
             )}
           </button>
         </div>
@@ -227,7 +229,34 @@ export default function App() {
   >(null);
   const [gameSoundEnabled, setGameSoundEnabled] = useState(true);
   const [gameVolume, setGameVolume] = useState(50);
-  const [showMobileGamepad, setShowMobileGamepad] = useState(true);
+  const [activeNexusSection, setActiveNexusSection] = useState<'community' | 'nexus' | 'sonexas' | null>(null);
+  const [communityAuthMode, setCommunityAuthMode] = useState<'login' | 'signup' | null>(null);
+  const [nexusAuthMode, setNexusAuthMode] = useState<'login' | 'signup' | null>(null);
+  
+  // Track Community Login State dynamically from localStorage
+  const [isCommunityUserLoggedIn, setIsCommunityUserLoggedIn] = useState<boolean>(() => {
+    try {
+      const isLoggedOut = localStorage.getItem('permanent_community_logged_out_flag');
+      if (isLoggedOut === 'true') return false;
+      const saved = localStorage.getItem('permanent_community_active_user_master_db');
+      return !!saved;
+    } catch {
+      return false;
+    }
+  });
+
+  // Track Nexus (A1 Nexus 04) Login State dynamically from localStorage
+  const [isNexusUserLoggedIn, setIsNexusUserLoggedIn] = useState<boolean>(() => {
+    try {
+      const stable = localStorage.getItem('nexus_stable_current_user');
+      if (stable) return true;
+      const legacyKeys = ['nexus_current_user_v6', 'nexus_current_user_v5', 'nexus_current_user_v4', 'nexus_current_user_v3', 'nexus_current_user_v2', 'fahadgram_user_v1'];
+      return legacyKeys.some(k => !!localStorage.getItem(k));
+    } catch {
+      return false;
+    }
+  });
+
   const gameModalRef = useRef<HTMLDivElement>(null);
   const gamesSliderRef = useRef<HTMLDivElement>(null);
 
@@ -569,40 +598,44 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white selection:bg-orange-500 selection:text-white">
+    <div className="min-h-screen bg-[#060913] text-white selection:bg-slate-700 selection:text-white">
       {/* Navigation with Smart Scroll Hide/Show */}
-      <nav className={`sticky top-0 z-40 backdrop-blur-md bg-gray-950/90 px-4 py-3 md:px-6 md:py-4 transition-transform duration-300 ${
+      <nav className={`sticky top-0 z-40 backdrop-blur-md bg-[#060913]/90 px-4 py-3 md:px-6 md:py-4 transition-transform duration-300 border-b border-slate-800/60 ${
         showNavbar ? 'translate-y-0' : '-translate-y-full'
       }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <a href="#" className="text-xl md:text-2xl font-black tracking-wider text-white hover:text-orange-500 transition shrink-0">
-            FAHAD<span className="text-orange-500">.</span>
+          <a href="#" className="text-xl md:text-2xl font-black tracking-wider text-white hover:text-slate-300 transition shrink-0 flex items-center gap-1">
+            <span>FAHAD</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 inline-block"></span>
           </a>
 
           {/* Centered Pill Container Navigation with Active Animation */}
-          <div className={`absolute top-full left-0 w-full bg-[#0a0f1c]/95 backdrop-blur-md p-4 md:static md:flex md:w-auto md:bg-[#0c1220]/90 md:border md:border-slate-800/80 md:rounded-full md:px-3 md:py-1.5 md:shadow-2xl items-center gap-1.5 text-sm font-medium ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
+          <div className={`absolute top-full left-0 w-full bg-[#080d19]/95 backdrop-blur-md p-4 md:static md:flex md:w-auto md:bg-[#0c1220]/90 md:border md:border-slate-800/80 md:rounded-full md:px-3 md:py-1.5 md:shadow-2xl items-center gap-1.5 text-sm font-medium ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
             {[
               { id: 'hero', label: 'Home' },
               { id: 'content-tabs', label: 'Videos' },
               { id: 'games', label: 'Games' },
-              { id: 'nexus-social', label: 'Nexus' },
-              { id: 'sonexas-ai', label: 'Sonexas AI' },
+              { id: 'nexus-hub', label: 'Nexus', tab: 'community' },
+              { id: 'sonexas-ai', label: 'Sonexas AI', tab: 'sonexas' },
               { id: 'contact-portal', label: 'Contact Me' }
             ].map(item => {
               const isActive = activeNav === item.id;
               return (
                 <a 
                   key={item.id} 
-                  href={`#${item.id}`} 
+                  href={`#${item.tab ? 'nexus-hub' : item.id}`} 
                   onClick={() => { 
                     setIsMobileMenuOpen(false); 
                     setActiveNav(item.id);
+                    if (item.tab) {
+                      setActiveNexusSection(item.tab as any);
+                    }
                     gameSound.playScore();
                   }} 
                   className={`block md:inline-block py-2 md:py-1.5 px-3.5 rounded-full transition-all duration-300 text-xs md:text-sm font-bold ${
                     isActive 
-                      ? 'bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 text-white shadow-lg shadow-orange-600/30 scale-105' 
-                      : 'text-gray-300 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-white text-slate-950 shadow-lg shadow-white/10 scale-105' 
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
                   {item.label}
@@ -622,52 +655,65 @@ export default function App() {
       {/* Main Content */}
       <div className="w-full">
 
-      {/* Hero Section */}
-      <header id="hero" className="max-w-6xl mx-auto px-4 md:px-6 py-10 md:py-16 flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-12">
-        <div className="md:w-1/2 space-y-4 md:space-y-5 text-center md:text-left">
-          <div className="flex flex-wrap justify-center md:justify-start gap-3">
-            <span className="flex items-center gap-1.5 text-xs bg-gray-900 border border-gray-800 px-3.5 py-1.5 rounded-full text-gray-300">
-              <MapPin size={14} className="text-orange-500" /> DHAKA, BANGLADESH
-            </span>
-            <span className="flex items-center gap-1.5 text-xs bg-gray-900 border border-gray-800 px-3.5 py-1.5 rounded-full text-gray-300">
-              <Globe size={14} className="text-emerald-500" /> Available worldwide
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
-            FAHAD<br />
-            <span className="text-orange-500">ENTERTAINMENT</span>
-          </h1>
-          <p className="text-base md:text-xl text-gray-300 font-light">
-            Cartoons, Music & Full Movies
-          </p>
-          <p className="text-gray-400 text-sm leading-relaxed">
-            বিশ্বমানের সেরা মিউজিক, জনপ্রিয় কার্টুন এবং ব্লকবাস্টার সিনেমার এক প্রিমিয়াম প্ল্যাটফর্ম। কোনো বাড়তি বিজ্ঞাপন বা বিভ্রান্তিকর ফ্রেম ছাড়াই সরাসরি হাই-ডেফিনিশন সিনেমাটিক প্লেয়ারে উপভোগ করুন নিরবচ্ছিন্ন বিনোদন।
-          </p>
-          <div className="flex justify-center md:justify-start gap-4 pt-2">
-            <button 
-              onClick={() => {
-                setActiveSection('cartoons');
-                const el = document.getElementById('content-tabs');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="bg-orange-600 hover:bg-orange-500 text-white font-semibold px-6 py-2.5 rounded-full transition shadow-lg text-sm"
-            >
-              Explore Cartoons
-            </button>
-          </div>
-        </div>
+      {/* Hero Section - World-Class Professional International Entertainment Lounge */}
+      <header id="hero" className="max-w-6xl mx-auto px-4 md:px-6 py-10 md:py-16">
+        <div className="relative rounded-3xl bg-gradient-to-b from-slate-900/60 via-[#0a0f1d] to-[#070b14] border border-slate-800/90 p-6 sm:p-10 md:p-12 shadow-2xl overflow-hidden flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-12">
+          
+          {/* Subtle Ambient Glow */}
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="md:w-3/5 space-y-4 md:space-y-5 text-center md:text-left z-10">
+            <div className="flex flex-wrap justify-center md:justify-start gap-2.5">
+              <span className="flex items-center gap-1.5 text-xs bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full text-slate-300 font-mono">
+                <MapPin size={13} className="text-slate-400" /> DHAKA, BANGLADESH
+              </span>
+              <span className="flex items-center gap-1.5 text-xs bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full text-slate-300 font-mono">
+                <Globe size={13} className="text-emerald-400" /> Worldwide Release
+              </span>
+            </div>
 
-        <div className="w-44 h-44 md:w-72 md:h-72 rounded-full bg-gradient-to-b from-gray-800 to-gray-900 border-4 border-orange-500/30 flex flex-col items-center justify-center shadow-2xl p-6 text-center">
-          <Film size={32} className="text-orange-500" />
-          <h3 className="text-xl md:text-2xl font-bold mt-2">FAHAD</h3>
-          <p className="text-xs uppercase tracking-widest text-orange-400 font-semibold mt-1">Creator & Curator</p>
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight leading-none text-white">
+              FAHAD<br />
+              <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent drop-shadow-[0_2px_15px_rgba(255,255,255,0.25)]">
+                ENTERTAINMENT
+              </span>
+            </h1>
+
+            <p className="text-sm sm:text-base md:text-lg text-slate-300 font-medium">
+              Premium Cartoons, High-Fidelity Music & Feature Movies
+            </p>
+
+            <p className="text-slate-400 text-xs sm:text-sm leading-relaxed max-w-xl">
+              বিশ্বমানের সেরা মিউজিক, জনপ্রিয় কার্টুন এবং ব্লকবাস্টার সিনেমার এক প্রিমিয়াম প্ল্যাটফর্ম। কোনো বাড়তি বিজ্ঞাপন ছাড়াই সরাসরি হাই-ডেফিনিশন সিনেমাটিক প্লেয়ারে উপভোগ করুন নিরবচ্ছিন্ন বিনোদন।
+            </p>
+
+            <div className="flex justify-center md:justify-start gap-3 pt-2">
+              <button 
+                onClick={() => {
+                  setActiveSection('cartoons');
+                  const el = document.getElementById('content-tabs');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-white hover:bg-slate-100 text-slate-950 font-bold px-6 py-2.5 rounded-full transition shadow-xl shadow-white/10 text-xs sm:text-sm cursor-pointer active:scale-95"
+              >
+                Explore Cartoons
+              </button>
+            </div>
+          </div>
+
+          <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 rounded-full bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 border border-slate-700/80 ring-4 ring-slate-800/40 flex flex-col items-center justify-center shadow-2xl p-6 text-center shrink-0 z-10">
+            <Film size={28} className="text-slate-200" />
+            <h3 className="text-lg md:text-xl font-bold mt-2 text-white">FAHAD</h3>
+            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-mono mt-0.5">Creator & Curator</p>
+          </div>
+
         </div>
       </header>
       
       {/* Main Content */}
-      <main id="content-tabs" className="max-w-6xl mx-auto px-4 md:px-6 py-6">
+      <main id="content-tabs" className="max-w-6xl mx-auto px-4 md:px-6 py-4">
         {/* Tab Navigation */}
-        <div className="flex flex-wrap gap-2 mb-8 bg-gray-900 p-1.5 rounded-full w-fit mx-auto border border-gray-800">
+        <div className="flex flex-wrap gap-1.5 mb-8 bg-slate-900/90 p-1 rounded-full w-fit mx-auto border border-slate-800 shadow-md">
           {[
             { id: 'cartoons', label: 'Cartoons' },
             { id: 'songs', label: 'Songs' },
@@ -676,7 +722,11 @@ export default function App() {
             <button
               key={sec.id}
               onClick={() => setActiveSection(sec.id as any)}
-              className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition ${activeSection === sec.id ? 'bg-orange-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
+              className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition cursor-pointer ${
+                activeSection === sec.id 
+                  ? 'bg-white text-slate-950 shadow-md font-bold' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
             >
               {sec.label}
             </button>
@@ -713,20 +763,20 @@ export default function App() {
           <div className="flex items-center justify-between mb-6 md:mb-8">
             <div className="flex items-center gap-3">
               {/* Sleek Mini Gaming Logo */}
-              <div className="relative flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-500 to-indigo-600 p-[1.5px] shadow-sm shadow-cyan-500/20">
+              <div className="relative flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-xl bg-gradient-to-tr from-slate-600 via-slate-400 to-white p-[1.5px] shadow-sm shadow-white/10">
                 <div className="w-full h-full bg-[#0a0f1c] rounded-[9px] flex items-center justify-center">
-                  <Gamepad2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-cyan-400" />
+                  <Gamepad2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-200" />
                 </div>
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-cyan-400 rounded-full border border-gray-950 animate-pulse" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-gray-950 animate-pulse" />
               </div>
 
               <div>
                 <h2 className="text-2xl md:text-3xl font-extrabold flex items-center gap-2 tracking-tight leading-none">
-                  <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(6,182,212,0.3)]">
+                  <span className="bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(255,255,255,0.25)]">
                     Games
                   </span>
                 </h2>
-                <span className="text-[10px] text-cyan-400/70 font-mono tracking-wider uppercase block mt-1">Smart Arcade Lounge</span>
+                <span className="text-[10px] text-slate-400 font-mono tracking-wider uppercase block mt-1">Smart Arcade Lounge</span>
               </div>
             </div>
 
@@ -735,7 +785,7 @@ export default function App() {
               {/* Small Left Arrow Button */}
               <button
                 onClick={() => scrollGames('left')}
-                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-[#0c1220] border border-slate-700/80 hover:border-cyan-500 hover:bg-cyan-600 text-gray-300 hover:text-white flex items-center justify-center transition shadow-md active:scale-90 cursor-pointer"
+                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-[#0c1220] border border-slate-700/80 hover:border-slate-400 hover:bg-slate-700 text-gray-300 hover:text-white flex items-center justify-center transition shadow-md active:scale-90 cursor-pointer"
                 title="আগের গেমগুলো দেখুন (Scroll Left)"
               >
                 <ChevronLeft size={16} />
@@ -744,7 +794,7 @@ export default function App() {
               {/* Small Right Arrow Button */}
               <button
                 onClick={() => scrollGames('right')}
-                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-[#0c1220] border border-slate-700/80 hover:border-cyan-500 hover:bg-cyan-600 text-gray-300 hover:text-white flex items-center justify-center transition shadow-md active:scale-90 cursor-pointer"
+                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-[#0c1220] border border-slate-700/80 hover:border-slate-400 hover:bg-slate-700 text-gray-300 hover:text-white flex items-center justify-center transition shadow-md active:scale-90 cursor-pointer"
                 title="পরের গেমগুলো দেখুন (Scroll Right)"
               >
                 <ChevronRight size={16} />
@@ -804,18 +854,164 @@ export default function App() {
           </div>
         </section>
 
-        {/* Community & Forum Groups Section (Now Nexus Social Platform) */}
-        <div id="nexus-social">
-          <CommunityForum />
-        </div>
+        {/* 3 Interactive Side-by-Side Smart Groups: Community, Nexus, Sonexas AI (Spaced from Games) */}
+        <section id="nexus-hub" className="mt-28 md:mt-36 mb-20 md:mb-28 scroll-mt-24">
+          {/* Top Row: 3 Groups Placed Face-to-Face Side-by-Side in a Single Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 md:gap-5">
+            
+            {/* 1. বাম পাশে: কমিউনিটি গ্রুপ (লগইন থাকলে 'ওপেন কমিউনিটি গ্রুপ', না থাকলে 'যুক্ত হন' ও 'লগইন করুন') */}
+            <div 
+              className="p-3.5 sm:p-4 rounded-2xl border border-slate-800/90 bg-[#0a0f1c] shadow-xl flex flex-col justify-between hover:border-cyan-500/50 transition-all duration-300"
+            >
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                    <Users size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-white leading-tight">কমিউনিটি গ্রুপ</h3>
+                    <span className="text-[9px] text-cyan-400/80 font-mono">
+                      {isCommunityUserLoggedIn ? 'সক্রিয় মেম্বার অ্যাকাউন্ট' : 'লাইভ চ্যাট ও ফোরাম'}
+                    </span>
+                  </div>
+                </div>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
 
-        {/* Fahad Entertainment Fan Zone & Lounge */}
-        <FahadEntertainmentZone />
+              {/* ডানে অপশন: লগইন করা থাকলে 'ওপেন কমিউনিটি গ্রুপ', নয়তো 'যুক্ত হন' ও 'লগইন করুন' */}
+              <div className="pt-1.5 border-t border-slate-800/70">
+                {isCommunityUserLoggedIn ? (
+                  <button
+                    onClick={() => {
+                      setCommunityAuthMode(null);
+                      setActiveNexusSection('community');
+                      gameSound.playStart();
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-slate-950 font-black text-xs transition shadow-md shadow-emerald-600/30 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-slate-950 animate-pulse" />
+                    <span>ওপেন কমিউনিটি গ্রুপ</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        setCommunityAuthMode('signup');
+                        setActiveNexusSection('community');
+                        gameSound.playPop();
+                      }}
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-slate-950 font-black text-xs transition shadow-md shadow-cyan-600/30 flex items-center justify-center cursor-pointer"
+                    >
+                      <span>যুক্ত হন</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCommunityAuthMode('login');
+                        setActiveNexusSection('community');
+                        gameSound.playPop();
+                      }}
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-xs border border-white/10 transition flex items-center justify-center cursor-pointer"
+                    >
+                      <span>লগইন করুন</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
 
-        {/* NEXUS AI Solver & Assistant Section */}
-        <div id="nexus-ai">
-          <NexusAiAssistant />
-        </div>
+            {/* 2. মাঝখানে / কিছুটা স্পেস রেখে: নেক্সাস (লগইন থাকলে 'ওপেন নেক্সাস', না থাকলে 'যুক্ত হন' ও 'লগইন করুন') */}
+            <div 
+              className="p-3.5 sm:p-4 rounded-2xl border border-slate-800/90 bg-[#0a0f1c] shadow-xl flex flex-col justify-between hover:border-amber-500/50 transition-all duration-300"
+            >
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-white leading-tight">নেক্সাস</h3>
+                    <span className="text-[9px] text-amber-400/80 font-mono">
+                      {isNexusUserLoggedIn ? 'সক্রিয় সোশাল অ্যাকাউন্ট' : 'সোশাল মিডিয়া নেটওয়ার্ক'}
+                    </span>
+                  </div>
+                </div>
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              </div>
+
+              {/* ডানে অপশন: লগইন করা থাকলে 'ওপেন নেক্সাস', নয়তো 'যুক্ত হন' ও 'লগইন করুন' */}
+              <div className="pt-1.5 border-t border-slate-800/70">
+                {isNexusUserLoggedIn ? (
+                  <button
+                    onClick={() => {
+                      setNexusAuthMode(null);
+                      setActiveNexusSection('nexus');
+                      gameSound.playStart();
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs transition shadow-md shadow-amber-500/30 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-slate-950 animate-pulse" />
+                    <span>ওপেন নেক্সাস</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        setNexusAuthMode('signup');
+                        setActiveNexusSection('nexus');
+                        gameSound.playPop();
+                      }}
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs transition shadow-md shadow-amber-500/30 flex items-center justify-center cursor-pointer"
+                    >
+                      <span>যুক্ত হন</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNexusAuthMode('login');
+                        setActiveNexusSection('nexus');
+                        gameSound.playPop();
+                      }}
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-xs border border-white/10 transition flex items-center justify-center cursor-pointer"
+                    >
+                      <span>লগইন করুন</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 3. ডান পাশে / কিছুটা স্পেস রেখে: সোনেক্সাস এআই */}
+            <div 
+              className="p-3.5 sm:p-4 rounded-2xl border border-slate-800/90 bg-[#0a0f1c] shadow-xl flex flex-col justify-between hover:border-purple-500/50 transition-all duration-300"
+            >
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+                    <Bot size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-white leading-tight">সোনেক্সাস এআই</h3>
+                    <span className="text-[9px] text-purple-400/80 font-mono">স্মার্ট এআই সলভার</span>
+                  </div>
+                </div>
+                <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+              </div>
+
+              {/* ডানে অপশন: চ্যাট শুরু করুন */}
+              <div className="pt-1.5 border-t border-slate-800/70">
+                <button
+                  onClick={() => {
+                    setActiveNexusSection('sonexas');
+                    gameSound.playPop();
+                  }}
+                  className="w-full py-2 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-black text-xs transition shadow-md shadow-purple-600/30 flex items-center justify-center cursor-pointer"
+                >
+                  <span>চ্যাট শুরু করুন</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
 
         {/* Dynamic Contact & Quick Mail Section */}
         <div id="contact-portal">
@@ -827,78 +1023,57 @@ export default function App() {
       <FooterSection />
       </div> {/* End of Smart Device Mode Viewport Container */}
       
-      {/* Video Modal - 100% Fresh Pure Clean Video Player with No Names Displayed */}
+      {/* Video Modal - 100% Full Screen Phone View & Edge-to-Edge Pure Video Player */}
       {selectedVideoItem && (
         <div 
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 md:p-6"
+          className="fixed inset-0 z-[250] bg-black/98 backdrop-blur-2xl flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 select-none animate-in fade-in duration-200"
           onClick={() => setSelectedVideoItem(null)}
         >
           <div 
             ref={videoModalDialogRef}
-            className={`relative w-full ${modalSize === 'large' ? 'max-w-5xl h-full sm:h-auto justify-center' : 'max-w-2xl'} bg-[#0c1220] rounded-none sm:rounded-2xl md:rounded-3xl overflow-hidden border-0 sm:border border-slate-700/80 shadow-2xl transition-all duration-300 flex flex-col`}
+            className="relative w-full h-full sm:h-auto max-w-6xl bg-[#070b19] sm:rounded-3xl overflow-hidden border-0 sm:border border-slate-800 shadow-2xl transition-all duration-300 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 100% Pure Fresh Header - No Names Displayed */}
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0a0f1c] border-b border-slate-800 shrink-0">
+            {/* Top Navigation & Exit Bar */}
+            <div className="flex items-center justify-between px-3.5 sm:px-5 py-3 bg-[#0a0f1c] border-b border-slate-800 shrink-0 shadow-md">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500 animate-pulse" />
-                <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-gray-400">
-                  Cinema View
-                </span>
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+                <h3 className="text-xs sm:text-sm font-bold text-white tracking-wider uppercase flex items-center gap-2">
+                  <span>🎬 HD Full Cinema Player</span>
+                </h3>
               </div>
 
-              {/* View Controls & Close button */}
+              {/* View Controls & Prominent Red Exit Button */}
               <div className="flex items-center gap-2 shrink-0">
-                {/* Full Screen Mode Button for phone/pc */}
+                {/* Full Screen Toggle Button */}
                 <button
                   onClick={toggleFullScreen}
-                  className="flex items-center gap-1.5 text-xs text-orange-400 hover:text-white px-2.5 sm:px-3 py-1.5 rounded-xl bg-orange-950/40 hover:bg-orange-600 transition border border-orange-500/30 cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs text-orange-400 hover:text-white px-3 py-1.5 rounded-full bg-orange-950/50 hover:bg-orange-600 transition border border-orange-500/40 cursor-pointer font-bold shadow"
                   title="ফুলস্ক্রিনে দেখুন (Full Screen)"
                 >
-                  <Maximize size={13} />
-                  <span className="font-semibold text-[11px] sm:text-xs">Full Screen</span>
+                  <Maximize size={14} />
+                  <span className="text-[11px] sm:text-xs">Full Screen</span>
                 </button>
 
-                {/* View Size Toggle */}
-                <button
-                  onClick={() => setModalSize(modalSize === 'large' ? 'small' : 'large')}
-                  className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-white px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 transition border border-gray-800 cursor-pointer"
-                  title={modalSize === 'large' ? 'ছোট করুন (Small View)' : 'বড় করুন (Large View)'}
-                >
-                  {modalSize === 'large' ? (
-                    <>
-                      <Minimize2 size={13} className="text-amber-400" />
-                      <span className="hidden sm:inline">Small View</span>
-                    </>
-                  ) : (
-                    <>
-                      <Maximize2 size={13} className="text-amber-400" />
-                      <span className="hidden sm:inline">Large View</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Close Button */}
+                {/* Clear Red Exit Button */}
                 <button 
                   onClick={() => setSelectedVideoItem(null)}
-                  className="p-1.5 rounded-xl bg-white/10 hover:bg-red-600 text-gray-300 hover:text-white transition cursor-pointer"
-                  title="বন্ধ করুন"
+                  className="px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-black text-xs flex items-center gap-1.5 border border-rose-400/40 shadow-lg active:scale-95 cursor-pointer"
+                  title="ভিডিও প্লেয়ার থেকে বের হন"
                 >
-                  <X size={18} />
+                  <X size={15} />
+                  <span>বের হন</span>
                 </button>
               </div>
             </div>
 
             {/* 
               Ultra-Clean Video Container:
-              Scales 1.72x centered inside overflow-hidden to permanently eliminate:
-              - Top 36%: Video Title, Channel Avatar, Channel Name, Share Button, Watch Later
-              - Bottom 36%: YouTube logo watermark, Copy Link button, 'More videos' shelf
-              - 100% Pure, Fresh, Cinematic Full Video with zero branding
+              Fills 100% of mobile screen height & width for full cinematic viewing!
             */}
             <div 
               ref={playerContainerRef}
-              className="relative aspect-video w-full bg-black overflow-hidden select-none"
+              className="relative w-full h-[60vh] sm:h-[68vh] md:h-[75vh] flex-1 bg-black overflow-hidden select-none flex items-center justify-center"
               style={{ isolation: 'isolate' }}
             >
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
@@ -1144,14 +1319,73 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Fullscreen Interactive Modal for Community Group / Nexus Lounge / Sonexas AI */}
+      {activeNexusSection && (
+        <div 
+          className="fixed inset-0 z-[190] bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-center p-0 sm:p-3 overflow-hidden select-none animate-in fade-in duration-200"
+        >
+          {/* Top Header Bar with Title and Exit Button */}
+          <div className="w-full max-w-7xl flex items-center justify-between px-4 py-3 bg-[#0a0f1c] border-b border-slate-800 shrink-0 sm:rounded-t-2xl shadow-xl">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 p-[1.5px] shadow-sm">
+                <div className="w-full h-full bg-[#070b19] rounded-[9px] flex items-center justify-center">
+                  {activeNexusSection === 'community' && <Users className="w-4 h-4 text-cyan-400" />}
+                  {activeNexusSection === 'nexus' && <Sparkles className="w-4 h-4 text-amber-400" />}
+                  {activeNexusSection === 'sonexas' && <Bot className="w-4 h-4 text-purple-400" />}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 leading-none">
+                  {activeNexusSection === 'community' && '💬 কমিউনিটি ফোরাম ও লাইভ গ্রুপ'}
+                  {activeNexusSection === 'nexus' && '🌐 Nexus Social'}
+                  {activeNexusSection === 'sonexas' && '🤖 সোনেক্সাস এআই চ্যাট ও সলভার'}
+                </h3>
+                <span className="text-[10px] text-gray-400 font-mono tracking-wider uppercase mt-1 block">
+                  {activeNexusSection === 'community' && 'পাবলিক চ্যাট • অডিও রুম • ফোরাম পোস্ট'}
+                  {activeNexusSection === 'nexus' && 'লাইভ সোশ্যাল নেটওয়ার্ক • টাইমলাইন • মেম্বার প্রোফাইল'}
+                  {activeNexusSection === 'sonexas' && 'স্মার্ট লজিক • কোড ও প্রশ্নের সমাধান'}
+                </span>
+              </div>
+            </div>
+
+            {/* Clear Red Exit Button */}
+            <button
+              onClick={() => setActiveNexusSection(null)}
+              className="px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white transition shadow-lg font-bold text-xs flex items-center gap-1.5 border border-rose-400/40 active:scale-95 cursor-pointer"
+              title="বের হন"
+            >
+              <X size={15} />
+              <span>বের হন</span>
+            </button>
+          </div>
+
+          {/* Modal Interactive Scrollable Body */}
+          <div className="w-full max-w-7xl flex-grow overflow-y-auto bg-[#070b19] border-x border-b border-slate-800 sm:rounded-b-2xl p-2 sm:p-4">
+            {activeNexusSection === 'community' && (
+              <CommunityForum 
+                initialAuthMode={communityAuthMode} 
+                onAuthStateChange={(isLoggedIn) => setIsCommunityUserLoggedIn(isLoggedIn)} 
+              />
+            )}
+            {activeNexusSection === 'nexus' && (
+              <FahadEntertainmentZone 
+                initialAuthMode={nexusAuthMode} 
+                onAuthStateChange={(isLoggedIn) => setIsNexusUserLoggedIn(isLoggedIn)} 
+              />
+            )}
+            {activeNexusSection === 'sonexas' && <NexusAiAssistant />}
+          </div>
+        </div>
+      )}
       {/* Mobile Floating Bottom Navigation Bar (like the uploaded image) */}
       <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 md:hidden bg-[#0c1220]/95 backdrop-blur-md border border-slate-800/90 rounded-full px-2.5 py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex items-center gap-1 overflow-x-auto max-w-[95vw] scrollbar-none">
         {[
           { id: 'hero', label: 'Home', icon: Home },
           { id: 'content-tabs', label: 'Videos', icon: Film },
           { id: 'games', label: 'Games', icon: Gamepad2 },
-          { id: 'community-forum', label: 'Community', icon: Users },
-          { id: 'nexus-ai', label: 'Nexus', icon: Sparkles },
+          { id: 'nexus-hub-community', label: 'Community', icon: Users, tab: 'community' },
+          { id: 'nexus-hub-ai', label: 'Nexus AI', icon: Sparkles, tab: 'sonexas' },
           { id: 'contact-portal', label: 'Contact', icon: Mail }
         ].map(item => {
           const IconComponent = item.icon;
@@ -1159,9 +1393,12 @@ export default function App() {
           return (
             <a
               key={item.id}
-              href={`#${item.id}`}
+              href={`#${item.tab ? 'nexus-hub' : item.id}`}
               onClick={() => {
                 setActiveNav(item.id);
+                if (item.tab) {
+                  setActiveNexusSection(item.tab as any);
+                }
                 gameSound.playScore();
               }}
               className={`flex flex-col items-center justify-center px-2.5 py-1 rounded-full transition-all duration-300 shrink-0 ${

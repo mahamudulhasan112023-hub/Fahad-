@@ -43,7 +43,7 @@ interface AiChatMessage {
 
 export const NexusAiAssistant: React.FC = () => {
   // Page/Workspace view state
-  const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isAiOpen, setIsAiOpen] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // 1. Permanent AI Accounts & Sessions States
@@ -82,6 +82,11 @@ export const NexusAiAssistant: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
+  // Google Account Chooser Modal state
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [googleCustomEmail, setGoogleCustomEmail] = useState('mahamudulhasan112023@gmail.com');
+  const [googleCustomName, setGoogleCustomName] = useState('Mahamudul Hasan');
+
   // Unified Prompt Input
   const [prompt, setPrompt] = useState('');
 
@@ -106,10 +111,10 @@ export const NexusAiAssistant: React.FC = () => {
 
   // Suggestions
   const suggestionPrompts = [
-    { label: "📝 সমাধান: পড়াশোনায় মন বসানোর টিপস", text: "আমি পড়ালেখায় মনোযোগ দিতে পারছি না, এআই আমাকে ৩টি কার্যকরী টিপস দিন।" },
-    { label: "💻 সমাধান: ল্যাপটপ অন না হওয়ার কারণ", text: "আমার ল্যাপটপ অন হচ্ছে না কিন্তু চার্জিং লাইট জ্বলছে, সমাধান কী?" },
-    { label: "🎨 আর্ট: সাইবারপাঙ্ক ঢাকা শহর", text: "একটি রোবট সাইকেল চালাচ্ছে, ব্যাকগ্রাউন্ডে সাইবারপাঙ্ক ঢাকা শহর, থ্রিডি অ্যানিমেশন" },
-    { label: "🌌 আর্ট: কিউট স্পেস বিড়াল", text: "একটি কিউট কিটি বিড়াল স্পেস স্যুট পরে চাঁদে বসে আছে, ডিজিটাল আর্ট" }
+    { label: "🌐 লাইভ তথ্য: আজকের শীর্ষ খবর সার্চ করো", text: "আজকের দেশী ও আন্তর্জাতিক শীর্ষ সংবাদগুলো গুগল থেকে লাইভ সার্চ করে জানান।" },
+    { label: "🌤️ রিয়েল-টাইম: আজকের আবহাওয়া রিপোর্ট", text: "আজকের আবহাওয়া কেমন থাকবে গুগল সার্চ করে আপডেট জানান।" },
+    { label: "📝 সমাধান: পড়াশোনায় মনোযোগের টিপস", text: "পড়াশোনায় গভীর মনোযোগ ধরে রাখার ৩টি বৈজ্ঞানিক কৌশল বলুন।" },
+    { label: "📷 ছবি বিশ্লেষণ: ছবি আপলোড করে প্রশ্ন করুন", text: "আপলোডকৃত ছবিটি ভালোভাবে পর্যবেক্ষণ করে মূল বিষয়টি বুঝিয়ে বলুন।" }
   ];
 
   // Sync databases to localStorage
@@ -177,19 +182,16 @@ export const NexusAiAssistant: React.FC = () => {
   const handleGoogleLogin = () => {
     setAuthError(null);
     setAuthSuccess(null);
-
-    const clientId = "669406608167-ojmdgcji51jq9ferfpd217g083cr43cu.apps.googleusercontent.com";
-    const redirectUri = window.location.origin;
-    const scope = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
-
-    const width = 500;
-    const height = 650;
-    const left = window.screenX + (window.innerWidth - width) / 2;
-    const top = window.screenY + (window.innerHeight - height) / 2;
-    
-    window.open(authUrl, "google_login_popup", `width=${width},height=${height},left=${left},top=${top}`);
+    setShowGoogleModal(true);
     gameSound.playBounce();
+  };
+
+  const confirmGoogleSignIn = (name: string, email: string) => {
+    processGoogleUser({
+      name: name || 'Google User',
+      email: email || 'mahamudulhasan112023@gmail.com'
+    });
+    setShowGoogleModal(false);
   };
 
   const handleCopyText = (content: string, id: string = 'guest') => {
@@ -352,22 +354,20 @@ export const NexusAiAssistant: React.FC = () => {
         finalResult = data.result;
       }
 
-      if (aiCurrentUser) {
-        const newMsg: AiChatMessage = {
-          id: `msg_${Date.now()}`,
-          userId: aiCurrentUser.id,
-          prompt: prompt.trim() || (image ? "📷 আপলোডকৃত ছবি বিশ্লেষণ" : "কোনো প্রম্পট নেই"),
-          imageInput: image,
-          resultType: 'text',
-          resultValue: finalResult,
-          timestamp: new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })
-        };
-        setAiChatHistory(prev => [...prev, newMsg]);
-        setPrompt('');
-        setImage(null);
-      } else {
-        setGuestTextResult(finalResult);
-      }
+      const activeUserId = aiCurrentUser ? aiCurrentUser.id : 'guest';
+      const newMsg: AiChatMessage = {
+        id: `msg_${Date.now()}`,
+        userId: activeUserId,
+        prompt: prompt.trim() || (image ? "📷 আপলোডকৃত ছবি বিশ্লেষণ" : "কোনো প্রম্পট নেই"),
+        imageInput: image,
+        resultType: 'text',
+        resultValue: finalResult,
+        timestamp: new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })
+      };
+      setAiChatHistory(prev => [...prev, newMsg]);
+      setGuestTextResult(finalResult);
+      setPrompt('');
+      setImage(null);
       gameSound.playScore();
     } catch (err: any) {
       console.error(err);
@@ -406,22 +406,19 @@ export const NexusAiAssistant: React.FC = () => {
       }
 
       const generatedUrl = data.imageUrl;
-
-      if (aiCurrentUser) {
-        const newMsg: AiChatMessage = {
-          id: `msg_${Date.now()}`,
-          userId: aiCurrentUser.id,
-          prompt: `🎨 জেনারেট প্রম্পট: ${prompt.trim()}`,
-          imageInput: null,
-          resultType: 'image',
-          resultValue: generatedUrl,
-          timestamp: new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })
-        };
-        setAiChatHistory(prev => [...prev, newMsg]);
-        setPrompt('');
-      } else {
-        setGuestImageResult(generatedUrl);
-      }
+      const activeUserId = aiCurrentUser ? aiCurrentUser.id : 'guest';
+      const newMsg: AiChatMessage = {
+        id: `msg_${Date.now()}`,
+        userId: activeUserId,
+        prompt: `🎨 জেনারেট প্রম্পট: ${prompt.trim()}`,
+        imageInput: null,
+        resultType: 'image',
+        resultValue: generatedUrl,
+        timestamp: new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })
+      };
+      setAiChatHistory(prev => [...prev, newMsg]);
+      setGuestImageResult(generatedUrl);
+      setPrompt('');
       gameSound.playScore();
     } catch (err: any) {
       console.error(err);
@@ -433,7 +430,9 @@ export const NexusAiAssistant: React.FC = () => {
     }
   };
 
-  const loggedInChats = aiCurrentUser ? aiChatHistory.filter(c => c.userId === aiCurrentUser.id) : [];
+  const loggedInChats = aiCurrentUser 
+    ? aiChatHistory.filter(c => c.userId === aiCurrentUser.id) 
+    : aiChatHistory.filter(c => c.userId === 'guest');
 
   // IF AI PORTAL CLOSED: Render sleek card on main page
   if (!isAiOpen) {
@@ -552,84 +551,67 @@ export const NexusAiAssistant: React.FC = () => {
           )}
 
           {/* CHAT AREA STREAM */}
-          <div className="flex-1 overflow-y-auto max-h-[420px] space-y-4 pr-1 my-3 scroll-smooth">
+          <div className="flex-1 overflow-y-auto max-h-[460px] min-h-[280px] space-y-4 pr-1 my-2 scroll-smooth">
             
-            {!aiCurrentUser ? (
-              <div className="space-y-4">
-                {guestTextResult && (
-                  <div className="p-4 rounded-2xl bg-[#040711] border border-cyan-500/30 shadow-xl space-y-3 animate-fade-in text-left">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                      <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1.5 font-bold uppercase">
-                        <Sparkles size={11} className="text-amber-400" />
-                        <span>Sonexas AI রেসপন্স:</span>
-                      </span>
+            {(() => {
+              const activeUserId = aiCurrentUser ? aiCurrentUser.id : 'guest';
+              const activeChats = aiChatHistory.filter(c => c.userId === activeUserId);
 
-                      <button
-                        onClick={() => handleCopyText(guestTextResult, 'guest')}
-                        className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-gray-400 hover:text-white flex items-center gap-1.5 text-[10px] font-bold transition cursor-pointer"
-                      >
-                        {guestCopied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
-                        <span>{guestCopied ? 'কপি হয়েছে' : 'কপি করুন'}</span>
-                      </button>
-                    </div>
-
-                    <div className="text-xs sm:text-sm text-gray-200 leading-relaxed whitespace-pre-wrap font-sans">
-                      {guestTextResult}
-                    </div>
-                  </div>
-                )}
-
-                {guestImageResult && (
-                  <div className="p-4 rounded-2xl bg-[#040711] border border-emerald-500/30 shadow-xl space-y-3 animate-fade-in text-left">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                      <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5 font-bold uppercase">
-                        <Paintbrush size={11} />
-                        <span>জেনারেটেড এআই ছবি:</span>
-                      </span>
-                    </div>
-
-                    <div className="rounded-2xl overflow-hidden border border-slate-800 shadow-md">
-                      <img src={guestImageResult} alt="AI Generated" className="w-full h-auto object-cover" />
-                    </div>
-                  </div>
-                )}
-
-                {!guestTextResult && !guestImageResult && (
+              if (activeChats.length === 0) {
+                return (
                   <div className="text-center py-12 px-4 space-y-3">
                     <div className="w-14 h-14 rounded-2xl bg-cyan-950/60 border border-cyan-500/30 mx-auto flex items-center justify-center text-cyan-400 animate-bounce">
                       <Sparkles size={28} />
                     </div>
-                    <h4 className="text-sm font-bold text-white">স্বাগতম সোনেক্সাস এআই চ্যাট বক্সে!</h4>
-                    <p className="text-xs text-gray-400 max-w-md mx-auto">
-                      যেকোনো প্রশ্ন করুন, পড়াশোনার সমাধান চান অথবা এআই ছবি তৈরি করতে নিচে আপনার প্রম্পট লিখুন।
+                    <h4 className="text-sm font-bold text-white">স্বাগতম সোনেক্সাস এআই ইন্টারঅ্যাক্টিভ চ্যাট বক্সে!</h4>
+                    <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+                      আজকের খবর, আবহাওয়া, যেকোনো প্রশ্ন বা ওয়েবসাইট সার্চ করতে নিচে টাইপ করুন। অথবা ছবি যুক্ত করে প্রশ্ন করুন!
                     </p>
                   </div>
-                )}
-              </div>
-            ) : (
-              // Logged in chats stream
-              <div className="space-y-4">
-                {loggedInChats.length === 0 ? (
-                  <div className="text-center py-10 text-xs text-gray-500">
-                    স্বাগতম, {aiCurrentUser.name}! আপনার প্রথম মেসেজ বা প্রম্পট নিচে লিখে পাঠান।
-                  </div>
-                ) : (
-                  loggedInChats.map((c) => (
-                    <div key={c.id} className="p-4 rounded-2xl bg-[#040711] border border-slate-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-cyan-400">{c.prompt}</span>
-                        <span className="text-[10px] text-gray-500">{c.timestamp}</span>
-                      </div>
-                      {c.resultType === 'image' ? (
-                        <img src={c.resultValue} alt="Saved AI" className="w-full rounded-xl border border-slate-800" />
-                      ) : (
-                        <p className="text-xs text-gray-200 whitespace-pre-wrap">{c.resultValue}</p>
+                );
+              }
+
+              return activeChats.map((c) => (
+                <div key={c.id} className="space-y-3 animate-fade-in">
+                  {/* User Prompt Bubble */}
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] sm:max-w-[75%] p-3.5 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-700 text-slate-950 font-bold text-xs shadow-lg space-y-2">
+                      {c.imageInput && (
+                        <div className="rounded-xl overflow-hidden border border-white/20 max-h-40 bg-black">
+                          <img src={c.imageInput} alt="User Upload" className="w-full h-auto object-cover max-h-40" />
+                        </div>
                       )}
+                      <p className="whitespace-pre-wrap">{c.prompt}</p>
+                      <span className="text-[9px] opacity-80 block text-right font-mono">{c.timestamp}</span>
                     </div>
-                  ))
-                )}
-              </div>
-            )}
+                  </div>
+
+                  {/* Sonexas AI Response Bubble */}
+                  <div className="flex justify-start">
+                    <div className="max-w-[90%] sm:max-w-[85%] p-4 rounded-2xl bg-[#040711] border border-cyan-500/30 text-gray-200 text-xs sm:text-sm space-y-2.5 shadow-xl">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="text-[10px] text-cyan-400 font-mono font-bold uppercase flex items-center gap-1.5">
+                          <Brain size={12} className="text-cyan-400" />
+                          <span>Sonexas AI রেসপন্স:</span>
+                        </span>
+
+                        <button
+                          onClick={() => handleCopyText(c.resultValue, c.id)}
+                          className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-gray-400 hover:text-white flex items-center gap-1 text-[10px] font-bold transition cursor-pointer"
+                        >
+                          {copiedId === c.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                          <span>{copiedId === c.id ? 'কপি হয়েছে' : 'কপি করুন'}</span>
+                        </button>
+                      </div>
+
+                      <div className="leading-relaxed whitespace-pre-wrap font-sans text-gray-200">
+                        {c.resultValue}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ));
+            })()}
 
           </div>
 
@@ -655,7 +637,7 @@ export const NexusAiAssistant: React.FC = () => {
               <img src={image} alt="Preview" className="w-12 h-12 object-cover rounded-xl" />
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-bold text-white block truncate">ছবি যুক্ত করা হয়েছে</span>
-                <span className="text-[10px] text-gray-400">এআই এই ছবি বিশ্লেষণ করবে</span>
+                <span className="text-[10px] text-gray-400">এআই এই ছবির প্রশ্নের উত্তর দেবে</span>
               </div>
               <button onClick={() => setImage(null)} className="p-1 rounded-lg text-red-400 hover:bg-red-950/50">
                 <X size={15} />
@@ -675,7 +657,7 @@ export const NexusAiAssistant: React.FC = () => {
                     handleSolve();
                   }
                 }}
-                placeholder="আপনার যেকোনো প্রশ্ন বা এআই ছবির বিবরণ এখানে লিখুন..."
+                placeholder="যেকোনো প্রশ্ন বা খবরের সার্চ ইনপুট লিখুন অথবা ছবি আপলোড করে প্রশ্ন করুন..."
                 rows={2}
                 className="flex-1 px-4 py-2.5 rounded-2xl bg-[#040711] border border-slate-800 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition resize-none"
               />
@@ -685,24 +667,15 @@ export const NexusAiAssistant: React.FC = () => {
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
                   title="ছবি আপলোড করুন"
-                  className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-cyan-400 transition cursor-pointer"
+                  className="p-3 rounded-2xl bg-slate-900 border border-cyan-500/40 hover:bg-slate-800 text-cyan-400 transition cursor-pointer flex items-center justify-center shadow"
                 >
-                  <Camera size={16} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleGenerateImage}
-                  title="এআই ছবি তৈরি করুন"
-                  className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-purple-400 transition cursor-pointer"
-                >
-                  <Paintbrush size={16} />
+                  <Camera size={18} />
                 </button>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-gray-500">Enter প্রেস করে দ্রুত মেসেজ পাঠান</span>
+              <span className="text-[10px] text-gray-500">Enter চেপে উত্তর নিন</span>
 
               <button
                 onClick={handleSolve}
@@ -717,7 +690,7 @@ export const NexusAiAssistant: React.FC = () => {
                 ) : (
                   <>
                     <Send size={14} />
-                    <span>সমাধান বা উত্তর নিন</span>
+                    <span>মেসেজ পাঠান</span>
                   </>
                 )}
               </button>
@@ -925,6 +898,77 @@ export const NexusAiAssistant: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* GOOGLE ONE-TAP / ACCOUNT SELECTOR MODAL */}
+      {showGoogleModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setShowGoogleModal(false)}
+        >
+          <div 
+            className="w-full max-w-sm bg-[#0e1628] border border-cyan-500/50 rounded-3xl p-6 shadow-2xl relative text-left my-auto space-y-4 animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow">
+                  <Chrome size={20} className="text-red-500" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-white">Google দিয়ে সাইন-ইন</h3>
+                  <p className="text-[10px] text-gray-400">আপনার গুগল অ্যাকাউন্টটি নির্বাচন করুন</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowGoogleModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-900 text-gray-400 hover:text-white flex items-center justify-center text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick 1-Click Primary Google Account Option */}
+            <div className="p-3.5 rounded-2xl bg-[#040711] border border-cyan-500/40 hover:border-cyan-400 transition cursor-pointer flex items-center justify-between gap-3 shadow-md group"
+                 onClick={() => confirmGoogleSignIn(googleCustomName, googleCustomEmail)}>
+              <div className="flex items-center gap-3 min-w-0">
+                <img 
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" 
+                  alt="Google Avatar" 
+                  className="w-10 h-10 rounded-full object-cover border-2 border-cyan-400 shrink-0" 
+                />
+                <div className="min-w-0">
+                  <h4 className="font-extrabold text-xs text-white group-hover:text-cyan-400 transition truncate">{googleCustomName}</h4>
+                  <p className="text-[10px] text-gray-400 truncate">{googleCustomEmail}</p>
+                </div>
+              </div>
+
+              <span className="px-2.5 py-1 rounded-xl bg-cyan-500 text-slate-950 font-black text-[10px] shrink-0">
+                কন্টিনিউ ➔
+              </span>
+            </div>
+
+            {/* Custom Google Email Option */}
+            <div className="space-y-2 pt-1 border-t border-slate-800/80">
+              <label className="block text-[10px] font-bold text-gray-400">অথবা অন্য ইমেইল ইনপুট দিন:</label>
+              <input
+                type="email"
+                value={googleCustomEmail}
+                onChange={(e) => setGoogleCustomEmail(e.target.value)}
+                placeholder="user@gmail.com"
+                className="w-full px-3 py-2 rounded-xl bg-[#040711] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+              />
+              <button
+                type="button"
+                onClick={() => confirmGoogleSignIn(googleCustomName || 'Google User', googleCustomEmail)}
+                className="w-full py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-xs hover:scale-[1.01] active:scale-95 transition cursor-pointer shadow-lg"
+              >
+                এই অ্যাকাউন্টে কন্টিনিউ করুন
+              </button>
+            </div>
           </div>
         </div>
       )}
